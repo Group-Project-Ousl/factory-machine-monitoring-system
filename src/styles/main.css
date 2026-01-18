@@ -1,0 +1,139 @@
+/* main.css - Light Theme Static Styles */
+
+/* import a suitable font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/@mdi/font@6.9.96/css/materialdesignicons.min.css');
+
+body {
+  background-color: #f8f9fa; /* Primary Background */
+  font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1a1d23; /* Text Main */
+  margin: 0;
+}
+
+/* Dashboard Grid & Cards */
+.dashboard-container {
+  padding: 24px;
+}
+
+.machine-card {
+  background: #ffffff; /* Surface Color */
+  border: 1px solid #e9ecef; /* Border Color */
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Status Badges - Using Light Backgrounds for Light Theme */
+.badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Running (Green) */
+.badge-running { 
+  background: #e8f5e9; 
+  color: #28a745; 
+}
+
+/* Idle (Yellow) */
+.badge-idle { 
+  background: #fff8e1; 
+  color: #ffc107; 
+}
+
+/* Error (Red) */
+.badge-error { 
+  background: #fdecea; 
+  color: #dc3545; 
+}
+
+/* Maintenance (Blue) */
+.badge-maintenance { 
+  background: #e3f2fd; 
+  color: #007bff; 
+}
+
+/* Typography Styles */
+.machine-id {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #1a1d23;
+}
+
+.label-text {
+  color: #6c757d; /* Muted Text */
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Modal / Add Machine Styling */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+.modal-content {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #fdfdfd;
+  margin-top: 8px;
+  color: #1a1d23;
+}
+
+/* Buttons */
+.btn-primary {
+  background: #000000; /* Solid Black as per UI */
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #1a1d23;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+}
+
+/* Page title used in dashboard header */
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f1724;
+}
+
+/* simple icon placeholder - replace with your SVG/component as needed */
+.page-title .icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2ff;
+  border-radius: 6px;
+  color: #1f2937;
+  font-size: 16px;
+}
