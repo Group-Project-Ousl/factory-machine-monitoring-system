@@ -12,6 +12,13 @@ export const routes: Array<RouteRecordRaw> = [
 		meta: { title: 'Dashboard', icon: 'mdi mdi-grid-large' }
 	},
 
+	{
+		path: '/analytics',
+		name: 'analytics',
+		component: () => import('../views/Analytics.vue'),
+		
+	},
+
 	
 	// optional catch-all redirect back to dashboard
 	{
