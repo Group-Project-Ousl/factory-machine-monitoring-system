@@ -8,9 +8,15 @@ export const routes: Array<RouteRecordRaw> = [
 	{
 		path: '/dashboard',
 		name: 'Dashboard',
-		component: () => import('../views/Dashboard.vue'),
+		component: () => import('../views/Dashboard.vue' as any),
 		meta: { title: 'Dashboard', icon: 'mdi mdi-grid-large' }
 	},
+	{
+  		path: '/login',
+  		name: 'Login',
+  		component: () => import('../views/login.vue' as any)
+},
+
 
 	{
 		path: '/analytics',
