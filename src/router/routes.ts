@@ -18,6 +18,13 @@ export const routes: Array<RouteRecordRaw> = [
 },
 
 
+	{
+		path: '/analytics',
+		name: 'analytics',
+		component: () => import('../views/Analytics.vue'),
+		
+	},
+
 	
 	// optional catch-all redirect back to dashboard
 	{
