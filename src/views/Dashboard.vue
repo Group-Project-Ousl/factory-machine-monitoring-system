@@ -169,24 +169,126 @@ onUnmounted(() => {
 
 <style scoped>
 /* Scoped styles remain unchanged as they were structurally correct */
-.monitoring-wrapper { padding: 32px; background: #f8fafc; min-height: 100vh; font-family: 'Inter', sans-serif; }
-.view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-.view-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0; }
-.last-updated { font-size: 0.875rem; color: #64748b; margin-top: 4px; }
-.primary-btn { background: #0f172a; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-.controls-bar { margin-bottom: 24px; }
-.filter-group { display: flex; align-items: center; gap: 12px; }
-.icon-square-btn { width: 42px; height: 42px; background: white; border: 1px solid #edf2f7; border-radius: 10px; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.status-tabs { display: flex; gap: 8px; background: #fff; padding: 4px; border-radius: 12px; border: 1px solid #edf2f7; }
-.tab-item { padding: 8px 16px; border-radius: 8px; border: none; background: transparent; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-.tab-item.active { background: #0f172a; color: white; }
-.badge-count { margin-left: 4px; opacity: 0.7; font-size: 0.8em; }
-.summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px; }
-.summary-card { background: white; padding: 24px; border-radius: 16px; border: 1px solid #edf2f7; }
-.summary-label { color: #64748b; font-size: 0.875rem; font-weight: 500; }
-.summary-value { font-size: 2rem; font-weight: 700; margin-top: 8px; }
-.machines-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px; }
-.machine-card { background: white; padding: 24px; border-radius: 16px; border: 1px solid #edf2f7; display: flex; flex-direction: column; gap: 24px; transition: transform 0.2s; }
+.monitoring-wrapper { 
+    padding: 32px; 
+    background: #f8fafc; 
+    min-height: 100vh; 
+    font-family: 'Inter', 
+    sans-serif; 
+}
+.view-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 32px; 
+}
+.view-title { 
+    font-size: 1.5rem; 
+    font-weight: 700; 
+    color: #0f172a; 
+    margin: 0; 
+}
+.last-updated { 
+    font-size: 0.875rem; 
+    color: #64748b; 
+    margin-top: 4px; 
+}
+.primary-btn { 
+    background: #0f172a; 
+    color: white; 
+    border: none; 
+    padding: 12px 24px; 
+    border-radius: 10px; 
+    font-weight: 700; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+}
+.controls-bar { 
+    margin-bottom: 24px; 
+}
+.filter-group { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+}
+.icon-square-btn { 
+    width: 42px; 
+    height: 42px; 
+    background: white; 
+    border: 1px solid #edf2f7; 
+    border-radius: 10px; 
+    color: #64748b; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+.status-tabs { 
+    display: flex; 
+    gap: 8px; 
+    background: #fff; 
+    padding: 4px; 
+    border-radius: 12px; 
+    border: 1px solid #edf2f7; 
+}
+.tab-item { 
+    padding: 8px 16px; 
+    border-radius: 8px; 
+    border: none; 
+    background: transparent; 
+    color: #64748b; 
+    font-weight: 600; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+}
+.tab-item.active { 
+    background: #0f172a; 
+    color: white; 
+}
+.badge-count { 
+    margin-left: 4px; 
+    opacity: 0.7; 
+    font-size: 0.8em; 
+}
+.summary-grid { 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 24px; 
+    margin-bottom: 32px; 
+}
+.summary-card { 
+    background: white; 
+    padding: 24px; 
+    border-radius: 16px; 
+    border: 1px solid #edf2f7; 
+}
+.summary-label { 
+    color: #64748b; 
+    font-size: 0.875rem; 
+    font-weight: 500; 
+}
+.summary-value { 
+    font-size: 2rem; 
+    font-weight: 700; 
+    margin-top: 8px; 
+}
+.machines-container { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); 
+    gap: 24px; 
+}
+.machine-card { 
+    background: white; 
+    padding: 24px; 
+    border-radius: 16px; 
+    border: 1px solid #edf2f7; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 24px; 
+    transition: transform 0.2s; 
+}
 .machine-card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px rgba(0,0,0,0.03); }
 .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
 .m-id { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0; }
