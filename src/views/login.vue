@@ -107,7 +107,7 @@ function login() {
 }
 
 function goSignup() {
-  router.push('/signup') 
+  router.push('/sign') 
 }
 </script>
 
