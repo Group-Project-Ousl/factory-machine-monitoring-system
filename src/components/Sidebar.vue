@@ -15,8 +15,8 @@
         :class="{ active: isActive(item) }"
         @click="go(item)"
       >
-        <i :class="item.icon"></i>
-        <span>{{ item.label }}</span>
+        <i :class="['icon', item.icon]"></i>
+        <span class="label">{{ item.label }}</span>
       </button>
     </nav>
 
@@ -139,16 +139,18 @@ const logout = () => {
   width: 100%;
   display: flex;
   align-items: center;
-  padding: 18px 20px;
-  margin-bottom: 6px;
+  
+  padding: 14px 20px; 
+  margin-bottom: 8px;
   border: none;
   background: transparent;
   cursor: pointer;
-  border-radius: 14px;
+  border-radius: 12px;
   color: #0f172a;
-  transition: background-color 150ms ease, transform 120ms ease, box-shadow 150ms ease, color 150ms ease;
-  font-weight: 700;
-  font-size: 1.15rem;
+  transition: all 0.2s ease;
+  font-weight: 600;
+ 
+  font-size: 1.1rem;
 }
 .nav-button .icon {
   font-size: 22px;
@@ -164,14 +166,14 @@ const logout = () => {
   transform: translateY(-2px);
   box-shadow: 0 8px 18px rgba(37, 99, 235, 0.06);
 }
-.nav-button:hover:not(.active) .icon i {
+.nav-button:hover:not(.active) .icon {
   color: #2563eb;
 }
 .nav-button.active {
   background: #eff6ff;
   color: #1b4fd6;
 }
-.nav-button.active .icon i {
+.nav-button.active .icon {
   color: #1b4fd6;
 }
 .nav-button.active .label {
