@@ -46,6 +46,13 @@ export const routes: Array<RouteRecordRaw> = [
     ]
   },
   {
+    path: '/help',
+    name: 'Help',
+    component: () => import('../views/helpcenter.vue' as any)
+  },
+
+
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/'
   },
@@ -55,6 +62,8 @@ export const routes: Array<RouteRecordRaw> = [
     name: 'Welcome',
     component: () => import('../views/welcome.vue' as any)
   },
+
+  
 ]
 
 export default routes
