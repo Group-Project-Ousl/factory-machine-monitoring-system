@@ -45,6 +45,26 @@ export const routes: Array<RouteRecordRaw> = [
       }
     ]
   },
+
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/login.vue' as any)
+  },
+
+  {
+    path: '/sign',
+    name: 'Sign',
+    component: () => import('../views/sign.vue' as any)
+  },
+
+  {
+    path: '/help',
+    name: 'Help',
+    component: () => import('../views/helpcenter.vue' as any)
+  },
+
+
   {
     path: '/:pathMatch(.*)*',
     redirect: '/'
@@ -55,6 +75,8 @@ export const routes: Array<RouteRecordRaw> = [
     name: 'Welcome',
     component: () => import('../views/welcome.vue' as any)
   },
+
+  
 ]
 
 export default routes
