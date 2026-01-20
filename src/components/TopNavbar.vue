@@ -1,10 +1,17 @@
 <template>
   <header class="top-navbar">
     <div class="nav-left">
-      <button class="icon-btn close-btn" aria-label="Close">
-        <i class="mdi mdi-close"></i>
+      <!-- Back / Close button -->
+      <button
+        class="icon-btn close-btn"
+        aria-label="Back"
+        @click="goBack"
+      >
+        <i class="mdi mdi-arrow-left"></i>
       </button>
-      <h2 class="page-title">FM System</h2>
+
+      <!-- Dynamic Page Title -->
+      <h2 class="page-title">{{ pageTitle }}</h2>
     </div>
 
     <div class="nav-right">
@@ -20,28 +27,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-const currentTime = ref('');
+/* Router */
+const route = useRoute()
+const router = useRouter()
+
+/* Dynamic page title from routes meta */
+const pageTitle = computed(() => {
+  return route.meta.title as string || 'FM System'
+})
+
+/* Clock */
+const currentTime = ref('')
 
 const updateClock = () => {
-  const now = new Date();
+  const now = new Date()
   currentTime.value = now.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     second: '2-digit',
     hour12: true
-  });
-};
+  })
+}
 
-let timer: any;
+let timer: number
 onMounted(() => {
-  updateClock();
-  timer = setInterval(updateClock, 1000);
-});
+  updateClock()
+  timer = window.setInterval(updateClock, 1000)
+})
+
 onUnmounted(() => {
-  clearInterval(timer);
-});
+  clearInterval(timer)
+})
+
+/* Back button logic */
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/dashboard')
+  }
+}
 </script>
 
 <style scoped>
@@ -68,7 +96,7 @@ onUnmounted(() => {
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 22px;
   color: #64748b;
   display: flex;
   align-items: center;
@@ -79,7 +107,6 @@ onUnmounted(() => {
   font-weight: 600;
   color: #0f172a;
   margin: 0;
-  /* Highlighted white background */
   background: #f2e8e8;
   padding: 6px 14px;
   border-radius: 10px;
