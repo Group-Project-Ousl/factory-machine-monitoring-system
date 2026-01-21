@@ -241,9 +241,29 @@ const filteredSections = computed(() => {
 
 <style scoped>
 .help-page {
+  /* place content to the right of the fixed sidebar (260px) */
   padding: 24px;
-  max-width: 1100px;
-  margin: 0 auto;
+  padding-top: 88px; /* avoid top navbar (64px) + small gap */
+  margin-left: 260px; /* match sidebar width */
+  margin-right: auto;
+  max-width: 1100px; /* keep readable content width */
+  box-sizing: border-box;
+  width: calc(100% - 260px); /* allow remaining horizontal space */
+}
+
+/* mobile */
+@media (max-width: 900px) {
+  .help-grid {
+    grid-template-columns: 1fr;
+  }
+  /* remove sidebar offset on small screens */
+  .help-page {
+    margin: 0 16px;
+    padding-top: 80px;
+    max-width: 100%;
+    margin-left: 0;
+    width: auto;
+  }
 }
 
 .help-header {
@@ -258,13 +278,6 @@ const filteredSections = computed(() => {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-}
-
-/* mobile */
-@media (max-width: 860px) {
-  .help-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .help-card-title {

@@ -64,6 +64,9 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+// Add Firebase imports
+import { auth } from '../firebase'
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
 
 const router = useRouter()
 
@@ -75,7 +78,7 @@ const password = ref('')
 const confirmPassword = ref('')
 const error = ref('')
 
-function createAccount () {
+async function createAccount () {
   error.value = ''
 
   // simple validation
@@ -94,22 +97,16 @@ function createAccount () {
     return
   }
 
-  // Demo: store created user list in localStorage (later backend connect)
-  const newUser = {
-    name: fullName.value.trim(),
-    email: email.value.trim(),
-    username: username.value.trim(),
-    mobile: mobile.value.trim(),
-    role: 'Operator' // default role (can change later)
+  try {
+    // Use email and password for Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(auth, email.value.trim(), password.value)
+    // Set display name
+    await updateProfile(userCredential.user, { displayName: fullName.value.trim() })
+    alert('Account created successfully! Now login.')
+    router.push('/login')
+  } catch (e) {
+    error.value = e.message
   }
-
-  const existing = JSON.parse(localStorage.getItem('createdUsers') || '[]')
-  existing.push(newUser)
-  localStorage.setItem('createdUsers', JSON.stringify(existing))
-
-  alert('Account created successfully! Now login.')
-
-  router.push('/login')
 }
 
 function goLogin () {

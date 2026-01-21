@@ -1,17 +1,15 @@
 <template>
   <header class="top-navbar">
     <div class="nav-left">
-      <!-- Back / Close button -->
-      <button
-        class="icon-btn close-btn"
-        aria-label="Back"
-        @click="goBack"
-      >
-        <i class="mdi mdi-arrow-left"></i>
-      </button>
+      <!-- simple breadcrumb: only Dashboard link -->
+      <nav class="breadcrumb" v-if="!isDashboard">
+        <RouterLink to="/dashboard" class="crumb-link">Dashboard</RouterLink>
+      </nav>
 
-      <!-- Dynamic Page Title -->
-      <h2 class="page-title">{{ pageTitle }}</h2>
+      <!-- Dynamic Page Title with animation -->
+      <transition name="title-fade" mode="out-in">
+        <h2 class="page-title" :key="pageTitle">{{ pageTitle }}</h2>
+      </transition>
     </div>
 
     <div class="nav-right">
@@ -19,7 +17,13 @@
         {{ currentTime }}
       </div>
 
-      <button class="settings-btn" aria-label="Settings">
+      <button
+        class="settings-btn"
+        aria-label="Settings"
+        @click="goSettings"
+        :aria-pressed="isSettingsActive"
+        :class="{ active: isSettingsActive }"
+      >
         <i class="mdi mdi-cog-outline"></i>
       </button>
     </div>
@@ -36,8 +40,12 @@ const router = useRouter()
 
 /* Dynamic page title from routes meta */
 const pageTitle = computed(() => {
-  return route.meta.title as string || 'FM System'
+  return (route.meta.title as string) || 'FM System'
 })
+
+/* helper flags */
+const isDashboard = computed(() => route.name === 'Dashboard' || route.path === '/dashboard')
+const isSettingsActive = computed(() => route.name === 'Settings' || route.path === '/settings')
 
 /* Clock */
 const currentTime = ref('')
@@ -62,13 +70,9 @@ onUnmounted(() => {
   clearInterval(timer)
 })
 
-/* Back button logic */
-const goBack = () => {
-  if (window.history.length > 1) {
-    router.back()
-  } else {
-    router.push('/dashboard')
-  }
+/* Navigation helpers */
+const goSettings = () => {
+  if (!isSettingsActive.value) router.push('/settings')
 }
 </script>
 
@@ -92,16 +96,11 @@ const goBack = () => {
   gap: 20px;
 }
 
-.close-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 22px;
-  color: #64748b;
-  display: flex;
-  align-items: center;
-}
+/* breadcrumb */
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; color: #64748b; }
+.crumb-link { color: #1e293b; text-decoration: none; font-weight: 600; }
 
+/* page title styling and animation */
 .page-title {
   font-size: 1.25rem;
   font-weight: 600;
@@ -112,7 +111,14 @@ const goBack = () => {
   border-radius: 10px;
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
   display: inline-block;
+  transition: transform .22s ease, opacity .22s ease;
 }
+
+/* transition classes for title */
+.title-fade-enter-from { opacity: 0; transform: translateY(-6px) scale(.995); }
+.title-fade-enter-active { transition: all .22s ease; }
+.title-fade-leave-to { opacity: 0; transform: translateY(6px) scale(.995); }
+.title-fade-leave-active { transition: all .18s ease; }
 
 .nav-right {
   display: flex;
@@ -127,6 +133,7 @@ const goBack = () => {
   font-family: 'Inter', sans-serif;
 }
 
+/* settings button active state */
 .settings-btn {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -140,13 +147,17 @@ const goBack = () => {
   color: #1e293b;
   transition: all 0.2s ease;
 }
+.settings-btn.active {
+  background: #0f172a;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(15,23,42,0.08);
+}
 
 .settings-btn:hover {
   background-color: #f8fafc;
   border-color: #cbd5e1;
 }
 
-.settings-btn i {
-  font-size: 20px;
-}
+.settings-btn i { font-size: 20px; }
 </style>

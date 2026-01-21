@@ -55,6 +55,18 @@ export const routes: Array<RouteRecordRaw> = [
           showInSidebar: true,
           order: 3
         }
+      },
+
+      {
+        path: 'help',
+        name: 'Help',
+        component: () => import('../views/helpcenter.vue' as any),
+        meta: {
+          title: 'Help Center',
+          icon: 'mdi mdi-help-circle',
+          showInSidebar: true,
+          order: 4
+        }
       }
     ]
   },
@@ -70,13 +82,6 @@ export const routes: Array<RouteRecordRaw> = [
     name: 'Sign',
     component: () => import('../views/sign.vue' as any)
   },
-
-  {
-    path: '/help',
-    name: 'Help',
-    component: () => import('../views/helpcenter.vue' as any)
-  },
-
 
   {
     path: '/:pathMatch(.*)*',
