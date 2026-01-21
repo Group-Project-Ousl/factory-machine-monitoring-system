@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import { auth, db, storage } from '../firebase'
 import { onAuthStateChanged } from 'firebase/auth'
+import 'firebase/auth'
 
 const firebaseState = reactive({
   user: auth.currentUser || null,
