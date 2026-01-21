@@ -25,6 +25,13 @@ export const routes: Array<RouteRecordRaw> = [
 		
 	},
 
+	{
+		path: '/settings',
+		name: 'Settings',
+		component: () => import('../views/Settings.vue'),
+		
+	},
+
 	
 	// optional catch-all redirect back to dashboard
 	{
