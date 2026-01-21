@@ -32,6 +32,19 @@ export const routes: Array<RouteRecordRaw> = [
           order: 2
         }
       },
+
+      {
+        path: 'settings',
+        name: 'Settings',
+        component: () => import('../views/Settings.vue'),
+        meta: {
+          title: 'Settings',
+          icon: 'mdi mdi-settings',
+          showInSidebar: true,
+          order: 2
+        }
+      },
+
       {
         path: 'alert',
         name: 'Alert',
