@@ -14,14 +14,14 @@
         Sign in to access the dashboard
       </p>
 
-      <!-- Username -->
+      <!-- Email -->
       <div class="field">
-        <label class="label-text label-lg">Username</label>
+        <label class="label-text label-lg">Email</label>
         <input
-          v-model="username"
+          v-model="email"
           class="form-input input-lg"
-          type="text"
-          placeholder="Enter your username"
+          type="email"
+          placeholder="Enter your email"
         />
       </div>
 
@@ -58,9 +58,7 @@
       <div class="demo">
         <p class="label-text label-lg" style="margin: 18px 0 8px;">Demo accounts:</p>
         <div class="label-text demo-text">
-          admin / admin (Admin)<br />
-          operator / operator (Operator)<br />
-          maintenance / maintenance (Maintenance)
+          Use your registered email and password.
         </div>
       </div>
 
@@ -72,38 +70,30 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { auth } from '../firebase'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 
 const router = useRouter()
 
-const username = ref('')
+const email = ref('')           // changed from username
 const password = ref('')
 
-function login() {
-  const u = username.value.trim()
+async function login() {
+  const e = email.value.trim()   // changed var name
   const p = password.value.trim()
 
-  if (!u || !p) {
-    alert('input user name and password')
+  if (!e || !p) {
+    alert('input email and password')
     return
   }
 
-  // Demo auth 
-  const users = [
-    { u: 'admin', p: 'admin', role: 'Admin', name: 'Admin' },
-    { u: 'operator', p: 'operator', role: 'Operator', name: 'Operator' },
-    { u: 'maintenance', p: 'maintenance', role: 'Maintenance', name: 'Maintenance' }
-  ]
-
-  const found = users.find(x => x.u === u && x.p === p)
-  if (!found) {
-    alert('Invalid username or password')
-    return
+  try {
+    await signInWithEmailAndPassword(auth, e, p)
+    localStorage.setItem('user', JSON.stringify({ name: auth.currentUser?.displayName, email: auth.currentUser?.email }))
+    router.push('/dashboard')
+  } catch (err) {
+    alert(err.message)
   }
-
-  
-  localStorage.setItem('user', JSON.stringify({ name: found.name, role: found.role }))
-
-  router.push('/dashboard') 
 }
 
 function goSignup() {

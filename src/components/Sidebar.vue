@@ -47,7 +47,8 @@ const route = useRoute();
 const menuItems = [
   { label: "Dashboard", icon: "mdi mdi-grid-large", routeName: "Dashboard" },
   { label: "Analytics", icon: "mdi mdi-chart-line", routeName: "Analytics" },
-  { label: "Alerts", icon: "mdi mdi-bell-alert", routeName: "Alert" }
+  { label: "Alerts", icon: "mdi mdi-bell-alert", routeName: "Alert" },
+  { label: "Help Center", icon: "mdi mdi-help-circle", routeName: "Help" }
 ];
 
 // Navigate to route
