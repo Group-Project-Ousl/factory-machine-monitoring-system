@@ -21,8 +21,13 @@
       </div>
 
       <div class="field">
-        <label class="label-text">Username</label>
-        <input v-model="username" class="form-input" type="text" placeholder="Create a username" />
+        <label class="label-text label-lg">Email</label>
+        <input
+          v-model="email"
+          class="form-input input-lg"
+          type="email"
+          placeholder="Enter your email"
+        />
       </div>
 
       <div class="field">
@@ -121,14 +126,27 @@ function goLogin () {
   display: grid;
   place-items: center;
   padding: 24px;
+  background: #d3e5ea;
 }
 
 .login-card {
-  width: 460px;
-  max-width: 92vw;
+  width: 500px;
+  max-width: 94vw;
+
+    box-shadow:
+    0 12px 30px rgba(37, 9, 219, 0.12),        /* depth */
+    0 6px 18px rgba(37, 99, 235, 0.25);     /* visible blue glow */
+
+  
+  border-top: 1px solid rgba(37, 99, 235, 0.15);
+}
+
+.login-card,
+.login-card * {
+  box-sizing: border-box;
 }
 
 .field {
-  margin-top: 12px;
+  margin-top: 14px;
 }
 </style>

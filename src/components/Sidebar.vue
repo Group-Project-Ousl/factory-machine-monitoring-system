@@ -22,7 +22,12 @@
 
     <div class="sidebar-footer">
       <div class="profile">
-        <div class="avatar">{{ avatarText }}</div>
+        <!-- avatar: display storage photoURL or initials (auto-managed by plugin) -->
+        <template v-if="avatarUrl">
+          <img class="avatar-img" :src="avatarUrl" :alt="profileName" />
+        </template>
+        <div v-else class="avatar">{{ avatarText }}</div>
+
         <div>
           <div>{{ profileName }}</div>
           <small>{{ profileRole }}</small>
@@ -37,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed, inject } from "vue";
 import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
@@ -66,19 +71,42 @@ const headerIcon = computed(() => {
   return active?.icon || "mdi mdi-factory";
 });
 
-// Profile info
-const profileName = ref("df");
-const profileRole = ref("Operator");
-const avatarText = computed(() => profileName.value.slice(0, 2).toUpperCase());
+const firebase = inject('firebase') as any;
+const user = computed(() => firebase?.state?.user || null);
+
+// Display name
+const displayName = computed(() => {
+  if (user.value?.displayName) return user.value.displayName;
+  if (user.value?.email) return user.value.email.split("@")[0];
+  return "User";
+});
+
+// Use displayName as profileName for the UI
+const profileName = displayName;
+const profileRole = computed(() => 'Operator');
+// add cache-bust so auto-generated avatar updates are picked up immediately
+const avatarUrl = computed(() => {
+  const url = user.value?.photoURL || null;
+  return url ? `${url}?t=${user.value?.metadata?.lastSignInTime || Date.now()}` : null;
+});
+
+// Initials (RM / BD / AD)
+const avatarText = computed(() => {
+  const name = displayName.value.trim();
+  if (!name) return "U";
+  const parts = name.split(" ");
+  const first = parts[0]?.charAt(0) || "";
+  const second = parts[1]?.charAt(0) || "";
+  return (first + second).toUpperCase();
+});
 
 // Logout function
-const logout = () => {
+const logout = async () => {
   try {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
+    await firebase?.signOut?.()
   } catch (e) {}
-  router.push("/login"); // safer than window.location.href
-};
+  router.push('/login')
+}
 </script>
 
 <style scoped>
@@ -231,6 +259,16 @@ const logout = () => {
   box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
 }
 
+/* new image avatar styling */
+.avatar-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.08);
+}
+
 /* Logout button */
 .logout-btn {
   width: auto;
@@ -273,6 +311,26 @@ const logout = () => {
 .logout-label {
   font-size: 0.95rem;
   transition: color 0.3s ease;
+}
+
+.visually-hidden { display: none; }
+
+/* make avatar clickable without changing existing avatar styles */
+.avatar-button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+.avatar-wrapper { display: inline-flex; align-items: center; gap: 8px; position: relative; }
+
+/* small progress text */
+.upload-progress {
+  font-size: 0.85rem;
+  color: #2563eb;
+  font-weight: 700;
 }
 </style>
 
