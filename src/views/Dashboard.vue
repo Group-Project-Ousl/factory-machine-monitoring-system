@@ -1,5 +1,6 @@
 <script setup lang="ts"> 
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import AddMachine from './addmachine.vue' // <-- new import
 
 /* --- State Management --- */
 const lastUpdatedTime = ref(new Date().toLocaleTimeString());
@@ -88,6 +89,49 @@ const simulateUpdates = () => {
 
 onMounted(() => { dataTimer = setInterval(simulateUpdates, 30000); });
 onUnmounted(() => { if (dataTimer) clearInterval(dataTimer); });
+
+// New: modal visibility and handler for added machine
+const showAddModal = ref(false);
+
+function onMachineAdded(payload: { name: string; type: string; status: string; temp?: number; target?: number }) {
+  // map incoming status to Machine.status union
+  const statusMap: Record<string, string> = { 'Errors': 'Error', 'Total': 'Idle' };
+  const mappedStatus = (statusMap[payload.status] || payload.status || 'Idle') as Machine['status'];
+
+  // generate next id based on existing ids like "M-001"
+  const maxNum = machines.value.reduce((max, m) => {
+    const n = parseInt(m.id.replace(/\D/g, ''), 10);
+    return isNaN(n) ? max : Math.max(max, n);
+  }, 0);
+  const newId = `M-${String(maxNum + 1).padStart(3, '0')}`;
+
+  const newMachine: Machine = {
+    id: newId,
+    type: payload.type,
+    status: mappedStatus,
+    temp: payload.temp ?? 25,
+    uptime: mappedStatus === 'Running' ? 100 : 0,
+    efficiency: mappedStatus === 'Running' ? parseFloat((70 + Math.random() * 25).toFixed(1)) : undefined
+  };
+
+  machines.value.push(newMachine);
+
+  // update tabs counts
+  const allTab = tabs.value.find(t => t.label === 'All');
+  if (allTab) allTab.count += 1;
+  const specificTab = tabs.value.find(t => t.label === mappedStatus);
+  if (specificTab) specificTab.count += 1;
+
+  // update machine summary
+  const totalStat = machineSummary.value.find(s => s.label === 'Total');
+  if (totalStat) totalStat.value += 1;
+  const summaryLabel = mappedStatus === 'Error' ? 'Errors' : mappedStatus;
+  const summaryStat = machineSummary.value.find(s => s.label === summaryLabel);
+  if (summaryStat) summaryStat.value += 1;
+
+  lastUpdatedTime.value = new Date().toLocaleTimeString();
+  showAddModal.value = false;
+}
 </script>
 
 <template>
@@ -111,7 +155,7 @@ onUnmounted(() => { if (dataTimer) clearInterval(dataTimer); });
             {{ tab.label }} ({{ tab.count }})
           </button>
         </div>
-        <button class="add-btn">+ Add Machine</button>
+        <button class="add-btn" @click="showAddModal = true">+ Add Machine</button> <!-- wired click -->
       </div>
     </section>
 
@@ -158,6 +202,9 @@ onUnmounted(() => { if (dataTimer) clearInterval(dataTimer); });
         </div>
       </div>
     </div>
+
+    <!-- New: AddMachine modal -->
+    <AddMachine v-if="showAddModal" @close="showAddModal = false" @added="onMachineAdded" />
   </div>
 </template>
 
