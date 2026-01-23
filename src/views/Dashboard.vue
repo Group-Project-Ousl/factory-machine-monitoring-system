@@ -1,50 +1,68 @@
 <script setup lang="ts"> 
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import AddMachine from './addmachine.vue' // <-- new import
+import * as AddMachineModule from './addmachine.vue';
+const AddMachine = (AddMachineModule as any).default || (AddMachineModule as any).AddMachine || (AddMachineModule as any);
 
-/* --- State Management --- */
+
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore'
+import { db } from '../firebase.js'
+
+
 const lastUpdatedTime = ref(new Date().toLocaleTimeString());
 const activeTab = ref('All');
 
-const tabs = ref([
-  { label: 'All', count: 8 },
-  { label: 'Running', count: 3 },
-  { label: 'Idle', count: 3 },
-  { label: 'Maintenance', count: 1 },
-  { label: 'Error', count: 1 }
-]);
 
-const machineSummary = ref([
-  { label: 'Total', value: 8, color: '#1e293b' },
-  { label: 'Running', value: 3, color: '#10b981' },
-  { label: 'Idle', value: 3, color: '#f59e0b' },
-  { label: 'Errors', value: 1, color: '#ef4444' }
-]);
+const tabs = ref<{ label: string; count: number }[]>([])
+const machineSummary = ref<{ label: string; value: number; color: string }[]>([])
 
-// Interface for type safety
+
 interface Machine {
   id: string;
+  name?: string; 
   type: string;
   status: 'Running' | 'Idle' | 'Error' | 'Maintenance';
-  temp: number;
-  uptime: number;
+  temp?: number | null;
+  uptime?: number;
   efficiency?: number;
+  target?: number;
+  createdAt?: string;
 }
 
-const machines = ref<Machine[]>([
-  { id: 'M-001', type: 'CNC Mill', status: 'Idle', temp: 25.3, uptime: 100 },
-  { id: 'M-002', type: 'Lathe', status: 'Running', temp: 75.2, efficiency: 75.7, uptime: 87 },
-  { id: 'M-003', type: 'Press', status: 'Error', temp: 99.4, uptime: 0 },
-  { id: 'M-004', type: 'Assembly Line', status: 'Idle', temp: 36.6, uptime: 100 },
-  { id: 'M-005', type: 'Welder', status: 'Running', temp: 72.7, efficiency: 93.7, uptime: 97 },
-  { id: 'M-006', type: 'Quality Check', status: 'Maintenance', temp: 33.1, uptime: 0 },
-  { id: 'M-007', type: 'CNC Mill', status: 'Idle', temp: 29.4, uptime: 100 },
-  { id: 'M-008', type: 'Lathe', status: 'Running', temp: 70.6, efficiency: 79.5, uptime: 89 }
-]);
 
-/* --- Computed: Sorting & Filtering --- */
+const machines = ref<Machine[]>([])
+
+
+function updateCountsFromMachines() {
+  const counts = { All: machines.value.length, Running: 0, Idle: 0, Maintenance: 0, Error: 0 }
+  machines.value.forEach(m => {
+    if (m.status === 'Running') counts.Running++
+    else if (m.status === 'Idle') counts.Idle++
+    else if (m.status === 'Maintenance') counts.Maintenance++
+    else if (m.status === 'Error') counts.Error++
+  })
+
+  tabs.value = [
+    { label: 'All', count: counts.All },
+    { label: 'Running', count: counts.Running },
+    { label: 'Idle', count: counts.Idle },
+    { label: 'Maintenance', count: counts.Maintenance },
+    { label: 'Error', count: counts.Error }
+  ]
+
+  machineSummary.value = [
+    { label: 'Total', value: counts.All, color: '#1e293b' },
+    { label: 'Running', value: counts.Running, color: '#10b981' },
+    { label: 'Idle', value: counts.Idle, color: '#f59e0b' },
+    { label: 'Errors', value: counts.Error, color: '#ef4444' }
+  ]
+}
+
+
+updateCountsFromMachines()
+
+
 const filteredMachines = computed(() => {
-  // Priority map: Running (1) -> Idle (2) -> Maintenance (3) -> Error (4)
+  
   const statusPriority: Record<string, number> = {
     'Running': 1,
     'Idle': 2,
@@ -53,13 +71,13 @@ const filteredMachines = computed(() => {
   };
 
   if (activeTab.value === 'All') {
-    // Return a sorted copy of the array
+    
     return [...machines.value].sort((a, b) => {
       return statusPriority[a.status] - statusPriority[b.status];
     });
   }
   
-  // Filter based on selected tab
+  
   return machines.value.filter(m => m.status === activeTab.value);
 });
 
@@ -73,14 +91,16 @@ const getStatusColor = (status: string) => {
   return colors[status] || '#64748b';
 };
 
-/* --- Real-time Updates --- */
+
 let dataTimer: ReturnType<typeof setInterval> | null = null;
 const simulateUpdates = () => {
   lastUpdatedTime.value = new Date().toLocaleTimeString();
   machines.value.forEach(m => {
     if (m.status === 'Running') {
-      m.temp = parseFloat((m.temp + (Math.random() * 0.4 - 0.2)).toFixed(1));
-      if (m.efficiency) {
+      // guard against null/undefined temps and efficiencies
+      const currentTemp = typeof m.temp === 'number' ? m.temp : 0;
+      m.temp = parseFloat((currentTemp + (Math.random() * 0.4 - 0.2)).toFixed(1));
+      if (typeof m.efficiency === 'number') {
         m.efficiency = parseFloat(Math.min(100, Math.max(0, m.efficiency + (Math.random() * 0.2 - 0.1))).toFixed(1));
       }
     }
@@ -90,47 +110,42 @@ const simulateUpdates = () => {
 onMounted(() => { dataTimer = setInterval(simulateUpdates, 30000); });
 onUnmounted(() => { if (dataTimer) clearInterval(dataTimer); });
 
-// New: modal visibility and handler for added machine
+
+let unsubscribe: (() => void) | null = null
+onMounted(() => {
+  const q = query(collection(db, 'machines'), orderBy('createdAt', 'asc'))
+  unsubscribe = onSnapshot(q, snapshot => {
+    machines.value = snapshot.docs.map(doc => {
+      const data = doc.data() as any
+      return {
+        id: doc.id,
+        name: data.name || '', 
+        type: data.type || 'Unknown',
+        status: (data.status as Machine['status']) || 'Idle',
+        temp: data.temp ?? null,
+        uptime: data.uptime ?? 0,
+        efficiency: data.efficiency ?? undefined,
+        target: data.target ?? undefined,
+        createdAt: data.createdAt ?? undefined
+      } as Machine
+    })
+    updateCountsFromMachines()
+    lastUpdatedTime.value = new Date().toLocaleTimeString()
+  }, err => {
+    console.error('Machines snapshot error:', err)
+  })
+})
+
+onUnmounted(() => { if (unsubscribe) unsubscribe() })
+
+
 const showAddModal = ref(false);
 
-function onMachineAdded(payload: { name: string; type: string; status: string; temp?: number; target?: number }) {
-  // map incoming status to Machine.status union
-  const statusMap: Record<string, string> = { 'Errors': 'Error', 'Total': 'Idle' };
-  const mappedStatus = (statusMap[payload.status] || payload.status || 'Idle') as Machine['status'];
 
-  // generate next id based on existing ids like "M-001"
-  const maxNum = machines.value.reduce((max, m) => {
-    const n = parseInt(m.id.replace(/\D/g, ''), 10);
-    return isNaN(n) ? max : Math.max(max, n);
-  }, 0);
-  const newId = `M-${String(maxNum + 1).padStart(3, '0')}`;
 
-  const newMachine: Machine = {
-    id: newId,
-    type: payload.type,
-    status: mappedStatus,
-    temp: payload.temp ?? 25,
-    uptime: mappedStatus === 'Running' ? 100 : 0,
-    efficiency: mappedStatus === 'Running' ? parseFloat((70 + Math.random() * 25).toFixed(1)) : undefined
-  };
-
-  machines.value.push(newMachine);
-
-  // update tabs counts
-  const allTab = tabs.value.find(t => t.label === 'All');
-  if (allTab) allTab.count += 1;
-  const specificTab = tabs.value.find(t => t.label === mappedStatus);
-  if (specificTab) specificTab.count += 1;
-
-  // update machine summary
-  const totalStat = machineSummary.value.find(s => s.label === 'Total');
-  if (totalStat) totalStat.value += 1;
-  const summaryLabel = mappedStatus === 'Error' ? 'Errors' : mappedStatus;
-  const summaryStat = machineSummary.value.find(s => s.label === summaryLabel);
-  if (summaryStat) summaryStat.value += 1;
-
-  lastUpdatedTime.value = new Date().toLocaleTimeString();
-  showAddModal.value = false;
+function onMachineAdded(_payload: any) {
+  
+  showAddModal.value = false
 }
 </script>
 
@@ -170,7 +185,8 @@ function onMachineAdded(payload: { name: string; type: string; status: string; t
       <div v-for="machine in filteredMachines" :key="machine.id" class="machine-card">
         <div class="card-header">
           <div class="info">
-            <h3 class="m-id">{{ machine.id }}</h3>
+           
+            <h3 class="m-id">{{ machine.name || machine.id }}</h3>
             <p class="m-type">{{ machine.type }}</p>
           </div>
           <div class="status-badge">
@@ -203,7 +219,7 @@ function onMachineAdded(payload: { name: string; type: string; status: string; t
       </div>
     </div>
 
-    <!-- New: AddMachine modal -->
+    
     <AddMachine v-if="showAddModal" @close="showAddModal = false" @added="onMachineAdded" />
   </div>
 </template>
@@ -211,7 +227,7 @@ function onMachineAdded(payload: { name: string; type: string; status: string; t
 <style scoped>
 .monitoring-wrapper { padding: 30px; background: #fcfcfc; min-height: 100vh; font-family: 'Inter', sans-serif; }
 
-/* Header & Filters */
+
 .header-section { margin-bottom: 25px; }
 .view-title { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0; }
 .last-updated { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
@@ -224,13 +240,13 @@ function onMachineAdded(payload: { name: string; type: string; status: string; t
 .tab-btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
 .add-btn { background: #0f172a; color: #fff; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; }
 
-/* Summary Stats */
+
 .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
 .summary-card { background: #fff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 10px; }
 .summary-label { font-size: 0.8rem; color: #64748b; font-weight: 500; }
 .summary-value { font-size: 1.8rem; font-weight: 700; margin-top: 5px; }
 
-/* Machine Grid Layout (3 Columns) */
+
 .machines-grid { 
   display: grid; 
   grid-template-columns: repeat(3, 1fr); 
@@ -272,7 +288,7 @@ function onMachineAdded(payload: { name: string; type: string; status: string; t
 .card-footer { border-top: 1px solid #f8fafc; padding-top: 15px; margin-top: 15px; }
 .uptime { font-size: 0.85rem; color: #94a3b8; font-weight: 500; }
 
-/* Responsive adjustments */
+
 @media (max-width: 1200px) { .machines-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 700px) { .machines-grid { grid-template-columns: 1fr; } .summary-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>
