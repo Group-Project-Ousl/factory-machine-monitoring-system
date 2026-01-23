@@ -4,7 +4,7 @@ import * as AddMachineModule from './addmachine.vue';
 const AddMachine = (AddMachineModule as any).default || (AddMachineModule as any).AddMachine || (AddMachineModule as any);
 
 
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore'
+import { collection, onSnapshot, query, orderBy, updateDoc, doc } from 'firebase/firestore'
 import { db } from '../firebase.js'
 
 
@@ -32,7 +32,23 @@ interface Machine {
 const machines = ref<Machine[]>([])
 
 
+// helper to normalize various status strings into the expected enum
+function normalizeStatus(s: any): Machine['status'] {
+  if (typeof s !== 'string') return 'Idle';
+  const str = s.trim().toLowerCase();
+  if (str.includes('run')) return 'Running';
+  if (str.includes('idle')) return 'Idle';
+  if (str.includes('maint')) return 'Maintenance';
+  if (str.includes('err') || str.includes('error')) return 'Error';
+  return 'Idle';
+}
+
 function updateCountsFromMachines() {
+  // ensure statuses are normalized before counting
+  machines.value.forEach(m => {
+    m.status = normalizeStatus(m.status);
+  });
+
   const counts = { All: machines.value.length, Running: 0, Idle: 0, Maintenance: 0, Error: 0 }
   machines.value.forEach(m => {
     if (m.status === 'Running') counts.Running++
@@ -121,7 +137,8 @@ onMounted(() => {
         id: doc.id,
         name: data.name || '', 
         type: data.type || 'Unknown',
-        status: (data.status as Machine['status']) || 'Idle',
+        // normalize incoming status values
+        status: normalizeStatus(data.status),
         temp: data.temp ?? null,
         uptime: data.uptime ?? 0,
         efficiency: data.efficiency ?? undefined,
@@ -140,12 +157,83 @@ onUnmounted(() => { if (unsubscribe) unsubscribe() })
 
 
 const showAddModal = ref(false);
+// add a toggle to enable sending dummy data to Firebase
+const sendDummyToFirebase = ref(false)
 
+// timer for pushing dummy data to Firestore
+let firebaseTimer: ReturnType<typeof setInterval> | null = null
 
+// generate and push dummy sensor-like values for each machine into Firestore
+async function pushDummyDataToFirebase() {
+  if (!machines.value.length) return
+  try {
+    await Promise.all(machines.value.map(async m => {
+      if (!m.id) return
+      // create small random variations; keep values sensible
+      const currentTemp = typeof m.temp === 'number' ? m.temp : 25 + Math.random() * 5
+      const newTemp = parseFloat((currentTemp + (Math.random() * 1.2 - 0.6)).toFixed(1))
+      const currentEff = typeof m.efficiency === 'number' ? m.efficiency : 80 + Math.random() * 10
+      const newEff = parseFloat(Math.min(100, Math.max(0, currentEff + (Math.random() * 2 - 1))).toFixed(1))
+      const newUptime = Math.min(100, (m.uptime ?? 0) + Math.round(Math.random() * 1)) // small change
+
+      await updateDoc(doc(db, 'machines', m.id), {
+        temp: newTemp,
+        efficiency: newEff,
+        uptime: newUptime
+      })
+    }))
+  } catch (err) {
+    console.error('Error pushing dummy data:', err)
+  }
+}
+
+// start interval to push when enabled
+onMounted(() => {
+  firebaseTimer = setInterval(() => {
+    if (sendDummyToFirebase.value) pushDummyDataToFirebase()
+  }, 15000) // push every 15s
+})
+
+// ensure firebaseTimer is cleared on unmount
+onUnmounted(() => {
+  if (firebaseTimer) clearInterval(firebaseTimer)
+})
 
 function onMachineAdded(_payload: any) {
   
   showAddModal.value = false
+}
+
+// track which machine's action menu is open
+const openMenuId = ref<string | null>(null)
+
+function toggleMenu(id: string) {
+  openMenuId.value = openMenuId.value === id ? null : id
+}
+
+// click outside handler to close menus
+function handleDocumentClick(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('.action-menu') && !target.closest('.mini-settings')) {
+    openMenuId.value = null
+  }
+}
+onMounted(() => document.addEventListener('click', handleDocumentClick))
+onUnmounted(() => document.removeEventListener('click', handleDocumentClick))
+
+// update status in Firestore (optimistic local update)
+async function changeStatus(id: string, newStatus: Machine['status']) {
+  try {
+    // optimistic local update
+    const idx = machines.value.findIndex(m => m.id === id)
+    if (idx !== -1) machines.value[idx].status = newStatus
+
+    await updateDoc(doc(db, 'machines', id), { status: newStatus })
+    openMenuId.value = null
+    updateCountsFromMachines()
+  } catch (err) {
+    console.error('Failed to change status:', err)
+  }
 }
 </script>
 
@@ -171,6 +259,14 @@ function onMachineAdded(_payload: any) {
           </button>
         </div>
         <button class="add-btn" @click="showAddModal = true">+ Add Machine</button> <!-- wired click -->
+        <!-- toggle button to send dummy data to Firebase -->
+        <button
+          class="add-btn"
+          :style="{ background: sendDummyToFirebase ? '#047857' : '#6b7280', marginLeft: '8px' }"
+          @click="sendDummyToFirebase = !sendDummyToFirebase"
+        >
+          {{ sendDummyToFirebase ? 'Pushing dummy → Firebase' : 'Enable dummy Firebase' }}
+        </button>
       </div>
     </section>
 
@@ -192,7 +288,44 @@ function onMachineAdded(_payload: any) {
           <div class="status-badge">
             <span class="status-dot" :style="{ backgroundColor: getStatusColor(machine.status) }"></span>
             <span class="status-label" :class="machine.status.toLowerCase()">{{ machine.status }}</span>
-            <button class="mini-settings"><i class="mdi mdi-tune"></i></button>
+
+            <!-- mini settings button toggles menu -->
+            <button
+              class="mini-settings"
+              :class="{ open: openMenuId === machine.id }"
+              @click.stop="toggleMenu(machine.id)"
+              aria-label="Actions"
+              :title="openMenuId === machine.id ? 'Close actions' : 'Open actions'"
+            >
+              <i :class="openMenuId === machine.id ? 'mdi mdi-close' : 'mdi mdi-dots-vertical'"></i>
+            </button>
+
+            <!-- action menu (shows options based on current status) -->
+            <div v-if="openMenuId === machine.id" class="action-menu">
+              <!-- Running: Stop (-> Idle), Set Maintenance, Set Idle -->
+              <template v-if="machine.status === 'Running'">
+                <button class="action-item stop" @click="changeStatus(machine.id, 'Idle')"><i class="mdi mdi-stop-circle-outline"></i> Stop</button>
+                <button class="action-item maintenance" @click="changeStatus(machine.id, 'Maintenance')"><i class="mdi mdi-wrench"></i> Add to Maintenance</button>
+                <button class="action-item idle" @click="changeStatus(machine.id, 'Idle')"><i class="mdi mdi-pause-circle-outline"></i> Set Idle</button>
+              </template>
+
+              <!-- Idle: Start, Add to Maintenance -->
+              <template v-else-if="machine.status === 'Idle'">
+                <button class="action-item start" @click="changeStatus(machine.id, 'Running')"><i class="mdi mdi-play-circle-outline"></i> Start</button>
+                <button class="action-item maintenance" @click="changeStatus(machine.id, 'Maintenance')"><i class="mdi mdi-wrench"></i> Add to Maintenance</button>
+              </template>
+
+              <!-- Error: Add to Maintenance -->
+              <template v-else-if="machine.status === 'Error'">
+                <button class="action-item maintenance" @click="changeStatus(machine.id, 'Maintenance')"><i class="mdi mdi-wrench"></i> Add to Maintenance</button>
+              </template>
+
+              <!-- Maintenance: Set Running, Set Idle -->
+              <template v-else-if="machine.status === 'Maintenance'">
+                <button class="action-item start" @click="changeStatus(machine.id, 'Running')"><i class="mdi mdi-play-circle-outline"></i> Set Running</button>
+                <button class="action-item idle" @click="changeStatus(machine.id, 'Idle')"><i class="mdi mdi-pause-circle-outline"></i> Set Idle</button>
+              </template>
+            </div>
           </div>
         </div>
 
@@ -273,7 +406,7 @@ function onMachineAdded(_payload: any) {
 .status-label.idle { color: #f59e0b; }
 .status-label.error { color: #ef4444; }
 .status-label.maintenance { color: #3b82f6; }
-.mini-settings { background: none; border: none; color: #cbd5e1; cursor: pointer; font-size: 1rem; }
+.mini-settings { background: none; border: none; color: #195eb2; cursor: pointer; font-size: 1rem; }
 
 .card-body { flex-grow: 1; min-height: 90px; }
 .data-row { display: flex; justify-content: space-between; margin-bottom: 12px; }
@@ -283,7 +416,7 @@ function onMachineAdded(_payload: any) {
 .error-text { color: #ef4444; }
 
 .progress-track { background: #f1f5f9; height: 7px; border-radius: 4px; overflow: hidden; margin-top: 4px; }
-.progress-thumb { background: #0f172a; height: 100%; border-radius: 4px; }
+.progress-thumb { background: #094ce7; height: 100%; border-radius: 4px; }
 
 .card-footer { border-top: 1px solid #f8fafc; padding-top: 15px; margin-top: 15px; }
 .uptime { font-size: 0.85rem; color: #94a3b8; font-weight: 500; }
@@ -292,3 +425,4 @@ function onMachineAdded(_payload: any) {
 @media (max-width: 1200px) { .machines-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 700px) { .machines-grid { grid-template-columns: 1fr; } .summary-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>
+
