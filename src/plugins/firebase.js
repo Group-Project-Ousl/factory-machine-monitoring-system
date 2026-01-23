@@ -3,12 +3,13 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyDfJfJfJfJfJfJfJfJfJfJfJfJfJfJfJfJf',
-  authDomain: 'factory-machine-monitoring-system.firebaseapp.com',
-  projectId: 'factory-machine-monitoring-system',
-  storageBucket: 'factory-machine-monitoring-system.appspot.com',
-  messagingSenderId: '123456789',
-  appId: '1:123456789:web:123456789'
+  apiKey: "AIzaSyAgg42Uv_0bMHnm9A5gob_vtsx42lEtIHU",
+  authDomain: "factory-machine-monitoring.firebaseapp.com",
+  databaseURL: "https://factory-machine-monitoring-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "factory-machine-monitoring",
+  storageBucket: "factory-machine-monitoring.firebasestorage.app",
+  messagingSenderId: "986931001302",
+  appId: "1:986931001302:web:2617880cdd3ae6d5db1677"
 };
 
 // initialize app

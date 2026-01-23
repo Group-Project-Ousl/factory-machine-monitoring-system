@@ -37,31 +37,32 @@
           </select>
         </div>
 
-        <!-- Two columns like sample -->
+        <!-- Two columns: remove Temperature, keep Target Output full width -->
         <div class="row-2">
-          <div class="field">
-            <label class="label-text">Temperature (°C)</label>
-            <input v-model.number="form.temp" class="form-input" type="number" min="0" />
-          </div>
-
           <div class="field">
             <label class="label-text">Target Output</label>
             <input v-model.number="form.target" class="form-input" type="number" min="0" />
           </div>
         </div>
 
-        <!-- Footer buttons -->
+        <!-- Footer buttons (updated to show loading/disable) -->
         <div class="actions">
-          <button class="btn-secondary" @click="close">Cancel</button>
-          <button class="btn-primary" @click="submit">Add Machine</button>
+          <button class="btn-secondary" @click="close" :disabled="loading || toast.visible">Cancel</button>
+          <button class="btn-primary" @click="submit" :disabled="loading || toast.visible">
+            <span v-if="loading">Adding...</span>
+            <span v-else>Add Machine</span>
+          </button>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- toast popup -->
+  <div v-if="toast.visible" class="toast">{{ toast.message }}</div>
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 
 const emit = defineEmits(['close', 'added'])
 
@@ -70,38 +71,77 @@ const machineTypes = [
   'Press',
   'Assembly Line',
   'Welder',
-  'Quality Check',          
+  'Quality Check',
   'Boiler'
 ]
 
-//statuses you said
 const statuses = ['Total', 'Running', 'Idle', 'Errors']
 
 const form = reactive({
   name: '',
   type: '',
   status: 'Idle',
-  temp: 25,
   target: 1000
 })
+
+const loading = ref(false)
+
+// add toast state for popup
+const toast = reactive({ visible: false, message: '' })
+
+// allow optional base URL from Vite env (set VITE_API_BASE=http://localhost:4000)
+const API_BASE = (import.meta.env && import.meta.env.VITE_API_BASE) ? import.meta.env.VITE_API_BASE.replace(/\/$/, '') : ''
+
+// add Firestore helpers
+import { addDoc, collection } from 'firebase/firestore'
+import { db } from '../firebase.js'
 
 function close() {
   emit('close')
 }
 
-function submit() {
-  if (!form.name.trim()) {
-    alert(' Add Machine Name ')
+async function submit() {
+  if (!form.name || !form.name.trim()) {
+    alert('Add Machine Name')
     return
   }
   if (!form.type) {
-    alert('Selecr type of Machine Type')
+    alert('Select type of Machine Type')
     return
   }
 
-  //send data back to dashboard
-  emit('added', { ...form })
-  emit('close')
+  loading.value = true
+  try {
+    console.debug('Add to Firestore', form)
+    const payload = {
+      name: form.name,
+      type: form.type,
+      status: form.status,
+      temp: null,
+      target: Number(form.target || 0),
+      createdAt: new Date().toISOString()
+    }
+    const docRef = await addDoc(collection(db, 'machines'), payload)
+    const created = { id: docRef.id, ...payload }
+    console.debug('Created', created)
+
+    // show popup toast first
+    toast.message = 'Machine added successfully'
+    toast.visible = true
+
+    // keep toast visible for a short period, then emit and close
+    await new Promise(resolve => setTimeout(resolve, 1300))
+
+    // emit so parent can update list and then close modal
+    emit('added', created)
+    toast.visible = false
+    emit('close')
+  } catch (e) {
+    console.error('Add machine failed:', e)
+    alert('Failed to add machine: ' + (e.message || 'network error'))
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -158,7 +198,7 @@ function submit() {
 
 .row-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 14px;
   margin-top: 6px;
 }
@@ -183,5 +223,21 @@ function submit() {
 .form-input {
   width: 100%;
   max-width: 100%;
+}
+
+/* toast popup */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #bbf7d0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(6,95,70,0.12);
+  z-index: 10010;
+  transition: opacity 200ms ease;
 }
 </style>

@@ -2,22 +2,22 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 import { getStorage } from "firebase/storage";
+import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAgg42Uv_0bMHnm9A5gob_vtsx42lEtIHU",
-  authDomain: "factory-machine-monitoring.firebaseapp.com",
-  databaseURL: "https://factory-machine-monitoring-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "factory-machine-monitoring",
-  storageBucket: "factory-machine-monitoring.firebasestorage.app",
-  messagingSenderId: "986931001302",
-  appId: "1:986931001302:web:2617880cdd3ae6d5db1677"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Initialize Firebase (safe for HMR / re-imports)
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);
-export const db = getDatabase(app);
+export const db = getFirestore(app);
 export const storage = getStorage(app);
 export default app;
