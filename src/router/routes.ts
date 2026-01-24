@@ -67,6 +67,18 @@ export const routes: Array<RouteRecordRaw> = [
           showInSidebar: true,
           order: 4
         }
+      },
+
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('../views/Profile.vue' as any),
+        meta: {
+          title: 'Profile',
+          icon: '',
+          showInSidebar: true,
+          order: 4
+        }
       }
     ]
   },

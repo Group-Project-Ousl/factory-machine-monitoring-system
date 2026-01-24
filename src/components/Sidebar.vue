@@ -21,7 +21,7 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div class="profile">
+      <button class="profile profile-btn" @click="goToProfile">
         <!-- avatar: display storage photoURL or initials (auto-managed by plugin) -->
         <template v-if="avatarUrl">
           <img class="avatar-img" :src="avatarUrl" :alt="profileName" />
@@ -32,7 +32,7 @@
           <div>{{ profileName }}</div>
           <small>{{ profileRole }}</small>
         </div>
-      </div>
+      </button>
 
       <button class="logout-btn" @click="logout">
         <i class="mdi mdi-logout"></i> Logout
@@ -100,6 +100,11 @@ const avatarText = computed(() => {
   return (first + second).toUpperCase();
 });
 
+// Navigate to profile
+const goToProfile = () => {
+  router.push({ name: 'Profile' });
+};
+
 // Logout function
 const logout = async () => {
   try {
@@ -107,6 +112,10 @@ const logout = async () => {
   } catch (e) {}
   router.push('/login')
 }
+</script>
+
+<script lang="ts">
+export default { name: 'Sidebar' }
 </script>
 
 <style scoped>
@@ -232,6 +241,46 @@ const logout = async () => {
   border-radius: 12px;
   width: 100%;
   box-sizing: border-box;
+}
+
+.profile-btn {
+  border: none;
+  cursor: pointer;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.profile-btn:hover {
+  background: #eff6ff;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+.profile-btn > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-btn > div > div {
+  color: #64748b;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.profile-btn > div > small {
+  color: #64748b;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
 /* Avatar */
