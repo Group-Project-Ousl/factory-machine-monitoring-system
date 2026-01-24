@@ -127,7 +127,7 @@ const thresholdConfig = [
   { label: 'Low Efficiency Warning', key: 'efficiency', unit: '%', min: 10, max: 90, step: 1 }
 ];
 
-const thresholds = ref<Record<string, number>>({ temp: 92, pressure: 2500, vibration: 4.5, efficiency: 70 });
+
 const connectivity = ref({ endpoint: 'https://api.factorywatch.com/v1', polling: '1m' });
 const localization = ref({ timezone: 'GMT+5:30', units: 'Metric' });
 const maintenance = ref({ id: '', date: '' });
@@ -184,14 +184,6 @@ const save = () => alert('Configuration Saved Successfully');
   cursor: pointer;
 }
 
-.custom-thick-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  background: #2563eb;
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
-}
 
 /* --- ENLARGED TOGGLE STYLES (image_baf375.png) --- */
 .large-toggle { width: 60px; height: 32px; position: relative; display: inline-block; }

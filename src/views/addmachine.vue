@@ -61,8 +61,10 @@
   <div v-if="toast.visible" class="toast">{{ toast.message }}</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref } from 'vue'
+import { addDoc, collection } from 'firebase/firestore'
+import { db } from '../firebase'
 
 const emit = defineEmits(['close', 'added'])
 
@@ -88,13 +90,6 @@ const loading = ref(false)
 
 // add toast state for popup
 const toast = reactive({ visible: false, message: '' })
-
-// allow optional base URL from Vite env (set VITE_API_BASE=http://localhost:4000)
-const API_BASE = (import.meta.env && import.meta.env.VITE_API_BASE) ? import.meta.env.VITE_API_BASE.replace(/\/$/, '') : ''
-
-// add Firestore helpers
-import { addDoc, collection } from 'firebase/firestore'
-import { db } from '../firebase.js'
 
 function close() {
   emit('close')
@@ -138,11 +133,16 @@ async function submit() {
     emit('close')
   } catch (e) {
     console.error('Add machine failed:', e)
-    alert('Failed to add machine: ' + (e.message || 'network error'))
+    const errorMessage = e instanceof Error ? e.message : 'network error'
+    alert('Failed to add machine: ' + errorMessage)
   } finally {
     loading.value = false
   }
 }
+</script>
+
+<script lang="ts">
+export default { name: 'AddMachine' }
 </script>
 
 <style scoped>
