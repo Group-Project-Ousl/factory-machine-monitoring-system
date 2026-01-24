@@ -6,151 +6,135 @@ import {
 } from 'chart.js';
 import { Line } from 'vue-chartjs';
 
-// 1. Component Registration
+// register Chart.js components (required for vue-chartjs to work)
 ChartJS.register(Title, Tooltip, Legend, LineElement, LinearScale, PointElement, CategoryScale, Filler);
 
-/* --- Lively State Management --- */
-const lastUpdatedTime = ref(new Date().toLocaleTimeString());
+// new imports for Firestore
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore'
+import { db } from '../firebase.js'
 
-const summaryMetrics = ref([
-  {
-    label: "Average Efficiency",
-    value: 87.3,
-    suffix: "%",
-    trendText: "+2.4% from last week",
-    trendIcon: "mdi mdi-trending-up",
-    trendType: "positive"
-  },
-  {
-    label: "Total Production (24h)",
-    value: 22450,
-    suffix: "",
-    trendText: "+5.2% from target",
-    trendIcon: "mdi mdi-trending-up",
-    trendType: "positive"
-  },
-  {
-    label: "Active Alerts",
-    value: 3,
-    suffix: "",
-    trendText: "1 critical, 2 warnings",
-    trendIcon: "mdi mdi-pulse",
-    trendType: "critical"
-  }
-]);
+// Machine interface (compatible with Dashboard)
+interface Machine {
+  id: string;
+  name?: string;
+  type?: string;
+  status?: 'Running' | 'Idle' | 'Error' | 'Maintenance' | string;
+  temp?: number | null;
+  uptime?: number;
+  efficiency?: number;
+  target?: number;
+  createdAt?: string;
+}
 
-/* --- Chart Configurations --- */
+ // reactive machines store
+ const machines = ref<Machine[]>([])
+ 
+ const summaryMetrics = ref([
+   { label: 'Avg Efficiency', value: 0, suffix: '%', trendType: 'positive', trendIcon: 'mdi mdi-trending-up', trendText: 'Stable' },
+   { label: 'Total Production', value: 0, suffix: '', trendType: 'positive', trendIcon: 'mdi mdi-factory', trendText: 'Target Met' },
+   { label: 'Active Alerts', value: 0, suffix: '', trendType: 'critical', trendIcon: 'mdi mdi-alert-circle-outline', trendText: 'Check' }
+ ] as Array<{ label: string; value: number | string; suffix?: string; trendType?: string; trendIcon?: string; trendText?: string }>)
 
-// Production Data - Fixed structure for reactivity
-const productionData = ref({
-  labels: ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'],
-  datasets: [{
-    label: 'Output',
-    data: [1150, 850, 1180, 880, 950, 850, 1100, 900, 1150, 950, 1100, 800],
-    fill: true,
-    borderColor: '#3b82f6',
-    borderWidth: 2,
-    tension: 0.4,
-    pointRadius: 0,
-    pointHitRadius: 20,
-    backgroundColor: (context: ScriptableContext<'line'>) => {
-      const chart = context.chart;
-      const { ctx, chartArea } = chart;
-      if (!chartArea) return 'transparent';
-      const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-      gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
-      gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
-      return gradient;
-    },
-  }]
-});
+ const productionData = ref({
+   labels: [] as string[],
+   datasets: [{
+     label: 'Production',
+     backgroundColor: 'rgba(59,130,246,0.1)',
+     borderColor: 'rgba(59,130,246,1)',
+     data: [] as number[],
+     fill: true
+   }]
+ })
 
-const productionOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  animation: { duration: 750 }, // Smooth transition for live updates
-  interaction: { mode: 'index' as const, intersect: false },
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      enabled: true,
-      backgroundColor: '#0f172a',
-      padding: 12,
-      cornerRadius: 8,
-      callbacks: { label: (context: any) => ` Output: ${context.parsed.y} units` }
-    }
-  },
-  scales: {
-    y: { beginAtZero: true, max: 1200, ticks: { stepSize: 300, color: '#94a3b8' }, grid: { borderDash: [5, 5], color: '#f1f5f9' } },
-    x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
-  }
-};
+ const efficiencyData = ref({
+   labels: [] as string[],
+   datasets: [{
+     label: 'Efficiency',
+     backgroundColor: 'rgba(16,185,129,0.1)',
+     borderColor: 'rgba(16,185,129,1)',
+     data: [] as number[],
+     fill: true
+   }]
+ })
 
-const efficiencyData = ref({
-  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  datasets: [{
-    label: 'Efficiency',
-    data: [82, 80.5, 85.5, 85.5, 86.5, 89.5, 78],
-    borderColor: '#10b981',
-    backgroundColor: '#ffffff',
-    pointBackgroundColor: '#10b981',
-    pointBorderColor: '#ffffff',
-    pointBorderWidth: 2,
-    pointRadius: 6,
-    tension: 0.4,
-    borderWidth: 3,
-  }]
-});
+ const productionOptions = { responsive: true, maintainAspectRatio: false } as any
+ const efficiencyOptions = { responsive: true, maintainAspectRatio: false } as any
+ const lastUpdatedTime = ref('')
 
-const efficiencyOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  interaction: { mode: 'nearest' as const, intersect: false },
-  plugins: {
-    legend: { display: false },
-    tooltip: { enabled: true, callbacks: { label: (context: any) => ` Efficiency: ${context.parsed.y}%` } }
-  },
-  scales: {
-    y: { min: 60, max: 100, ticks: { stepSize: 10, color: '#94a3b8' }, grid: { borderDash: [5, 5], color: '#f1f5f9' } },
-    x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
-  }
-};
+// helper: recompute derived metrics & chart data from machines
+function refreshFromMachines() {
+  // Average Efficiency
+  const effValues = machines.value.map(m => m.efficiency).filter(v => typeof v === 'number') as number[]
+  const avgEff = effValues.length ? parseFloat((effValues.reduce((a,b)=>a+b,0)/effValues.length).toFixed(1)) : 0
+  summaryMetrics.value[0].value = avgEff
 
-/* --- Logic for Lively Updates --- */
-const simulateDataUpdate = () => {
-  lastUpdatedTime.value = new Date().toLocaleTimeString();
+  // Total Production (estimate) -> sum(target * uptime%)
+  const totalProduction = machines.value.reduce((sum, m) => {
+    const tgt = Number(m.target ?? 0)
+    const up = Number(m.uptime ?? 0) / 100
+    return sum + Math.round(tgt * up)
+  }, 0)
+  summaryMetrics.value[1].value = totalProduction
 
-  // 1. Update Metrics
-  summaryMetrics.value[0].value = parseFloat((85 + Math.random() * 5).toFixed(1));
-  summaryMetrics.value[1].value += Math.floor(Math.random() * 20);
-  summaryMetrics.value[2].value = Math.floor(Math.random() * 5);
+  // Active Alerts = errors count
+  const errors = machines.value.filter(m => String(m.status).toLowerCase().includes('err')).length
+  summaryMetrics.value[2].value = errors
 
-  // 2. Update Production Chart (Immutably update ref to trigger Vue-Chartjs watcher)
-  const newPoints = [...productionData.value.datasets[0].data];
-  const newDataPoint = 800 + Math.floor(Math.random() * 400);
-  newPoints.push(newDataPoint);
-  newPoints.shift();
-
+  // Update production chart: use machine names and estimated production or target
   productionData.value = {
     ...productionData.value,
-    datasets: [
-      {
-        ...productionData.value.datasets[0],
-        data: newPoints
-      }
-    ]
-  };
-};
+    labels: machines.value.map(m => m.name || m.id),
+    datasets: [{
+      ...productionData.value.datasets[0],
+      data: machines.value.map(m => Math.round((m.target ?? 0) * ( (m.uptime ?? 0) / 100 )))
+    }]
+  }
 
-let dataTimer: any;
+  // Update efficiency chart with per-machine efficiency (fill missing with 0)
+  efficiencyData.value = {
+    ...efficiencyData.value,
+    labels: machines.value.map(m => m.name || m.id),
+    datasets: [{
+      ...efficiencyData.value.datasets[0],
+      data: machines.value.map(m => typeof m.efficiency === 'number' ? m.efficiency : 0)
+    }]
+  }
 
+  lastUpdatedTime.value = new Date().toLocaleTimeString()
+}
+
+// subscribe to Firestore machines collection
+let unsubscribeMachines: (() => void) | null = null
 onMounted(() => {
-  dataTimer = setInterval(simulateDataUpdate, 60000); // 1 minute interval
-});
+  const q = query(collection(db, 'machines'), orderBy('createdAt', 'asc'))
+  unsubscribeMachines = onSnapshot(q, snapshot => {
+    machines.value = snapshot.docs.map(doc => {
+      const d = doc.data() as any
+      return {
+        id: doc.id,
+        name: d.name || '',
+        type: d.type || '',
+        status: d.status || 'Idle',
+        temp: d.temp ?? null,
+        uptime: d.uptime ?? 0,
+        efficiency: typeof d.efficiency === 'number' ? d.efficiency : undefined,
+        target: d.target ?? 0,
+        createdAt: d.createdAt ?? ''
+      } as Machine
+    })
+    refreshFromMachines()
+  }, err => {
+    console.error('Machines snapshot error (Analytics):', err)
+  })
+
+  // existing simulate timer (if any) remains
+  // ...existing onMounted code...
+})
 
 onUnmounted(() => {
-  if (dataTimer) clearInterval(dataTimer);
-});
+  if (unsubscribeMachines) unsubscribeMachines()
+  // ...existing onUnmounted cleanup...
+})
 </script>
 
 <template>
