@@ -15,9 +15,15 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase (safe for HMR / re-imports)
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+let app;
+try {
+  app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+} catch (error) {
+  console.error("Firebase initialization error:", error);
+}
 
 export const auth = getAuth(app);
+export const database = getDatabase(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export default app;
