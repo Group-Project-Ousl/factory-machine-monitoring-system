@@ -1,27 +1,22 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { reactive } from 'vue'
+import { auth, db, storage } from '../firebase'
+import { onAuthStateChanged } from 'firebase/auth'
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAgg42Uv_0bMHnm9A5gob_vtsx42lEtIHU",
-  authDomain: "factory-machine-monitoring.firebaseapp.com",
-  databaseURL: "https://factory-machine-monitoring-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "factory-machine-monitoring",
-  storageBucket: "factory-machine-monitoring.firebasestorage.app",
-  messagingSenderId: "986931001302",
-  appId: "1:986931001302:web:2617880cdd3ae6d5db1677"
-};
+const firebaseState = reactive({
+  user: auth.currentUser || null,
+  ready: false
+})
 
-// initialize app
-initializeApp(firebaseConfig);
+onAuthStateChanged(auth, (user) => {
+  firebaseState.user = user
+  firebaseState.ready = true
+})
 
-// ensure you export the initialized app:
-// e.g. after initializeApp(firebaseConfig) assign to a variable and export it:
-export const firebaseApp = initializeApp(firebaseConfig);
-
-// optional: provide a default export so old default-importing code still works
-export default firebaseApp;
-
-// get Firestore and Auth instances
-const db = getFirestore(firebaseApp);
-const auth = getAuth(firebaseApp);
+export default {
+  install(app) {
+    const api = { auth, db, storage, state: firebaseState }
+    app.provide('firebase', api)
+    app.config.globalProperties.$firebase = api
+  }
+}
+ 

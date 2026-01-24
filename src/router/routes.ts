@@ -1,7 +1,7 @@
 import { RouteRecordRaw } from 'vue-router'
 import DefaultLayout from '../layouts/DefaultLayout.vue'
 
-export const routes: Array<RouteRecordRaw> = [
+const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     component: DefaultLayout,
@@ -75,6 +75,12 @@ export const routes: Array<RouteRecordRaw> = [
     path: '/login',
     name: 'Login',
     component: () => import('../views/login.vue' as any)
+  },
+
+  {
+    path: '/fogetpassword',
+    name: 'FogetPassword',
+    component: () => import('../views/fogetpassword.vue')
   },
 
   {

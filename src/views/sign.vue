@@ -20,13 +20,13 @@
         <input v-model="email" class="form-input" type="email" placeholder="Enter your email" />
       </div>
 
-      <div class="field">
-        <label class="label-text label-lg">Email</label>
+    <div class="field">
+        <label class="label-text">Username</label>
         <input
-          v-model="email"
-          class="form-input input-lg"
-          type="email"
-          placeholder="Enter your email"
+          v-model="username"
+          class="form-input"
+          type="text"
+          placeholder="Enter a username"
         />
       </div>
 
