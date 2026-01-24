@@ -78,6 +78,12 @@ const routes: Array<RouteRecordRaw> = [
   },
 
   {
+    path: '/fogetpassword',
+    name: 'FogetPassword',
+    component: () => import('../views/fogetpassword.vue')
+  },
+
+  {
     path: '/sign',
     name: 'Sign',
     component: () => import('../views/sign.vue' as any)
