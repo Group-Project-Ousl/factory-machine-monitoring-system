@@ -16,9 +16,15 @@
         <input
           v-model="email"
           class="form-input input-lg"
+          :class="{ 'input-error': authError && errorTarget === 'email' }"
           type="email"
           placeholder="Enter your email"
         />
+
+        <!-- ✅ email error (under email) -->
+        <p v-if="authError && errorTarget === 'email'" class="error-text">
+          {{ authError }}
+        </p>
       </div>
 
       <div class="field">
@@ -26,10 +32,21 @@
         <input
           v-model="password"
           class="form-input input-lg"
+          :class="{ 'input-error': authError && errorTarget === 'password' }"
           type="password"
           placeholder="Enter your password"
         />
+
+        <!-- ✅ password error (under password) -->
+        <p v-if="authError && errorTarget === 'password'" class="error-text">
+          {{ authError }}
+        </p>
       </div>
+
+      <!-- ✅ general error (like google popup blocked etc.) -->
+      <p v-if="authError && errorTarget === 'general'" class="error-text center-error">
+        {{ authError }}
+      </p>
 
       <button class="btn-primary btn-lg" style="width:100%; margin-top: 18px;" @click="login">
         Login
@@ -37,6 +54,10 @@
 
       <button class="btn-secondary btn-lg" style="width:100%; margin-top: 12px;" @click="goSignup">
         Create New Account
+      </button>
+
+      <button class="btn-secondary btn-lg" style="width:100%; margin-top: 12px;" @click="goForgot">
+        Forgot Password?
       </button>
 
       <!-- Google button: under Create Account button -->
@@ -56,48 +77,89 @@
   </div>
 </template>
 
-
-
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth } from '../firebase'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 
-/* ===== NEW: Google Sign-In imports (ADDED ONLY) ===== */
+/* ===== Google Sign-In imports ===== */
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 
 const router = useRouter()
 
-const email = ref('')           // changed from username
+const email = ref('')
 const password = ref('')
 
+/* ✅ NEW: inline error state */
+const authError = ref('')
+const errorTarget = ref('') // 'email' | 'password' | 'general'
+
+function clearError() {
+  authError.value = ''
+  errorTarget.value = ''
+}
+
 async function login() {
-  const e = email.value.trim()   // changed var name
+  clearError()
+
+  const e = email.value.trim()
   const p = password.value.trim()
 
-  if (!e || !p) {
-    alert('input email and password')
+  if (!e) {
+    authError.value = 'Please enter your email.'
+    errorTarget.value = 'email'
+    return
+  }
+  if (!p) {
+    authError.value = 'Please enter your password.'
+    errorTarget.value = 'password'
     return
   }
 
   try {
     await signInWithEmailAndPassword(auth, e, p)
-    localStorage.setItem('user', JSON.stringify({ name: auth.currentUser?.displayName, email: auth.currentUser?.email }))
+
+    localStorage.setItem(
+      'user',
+      JSON.stringify({
+        name: auth.currentUser?.displayName,
+        email: auth.currentUser?.email
+      })
+    )
+
     router.push('/dashboard')
   } catch (err) {
-    alert(err.message)
+    // ✅ show message under password (no popup)
+    const code = err?.code || ''
+    if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
+      authError.value = 'Wrong password. Please check your password.'
+      errorTarget.value = 'password'
+    } else if (code === 'auth/user-not-found') {
+      authError.value = 'No account found for this email.'
+      errorTarget.value = 'email'
+    } else if (code === 'auth/invalid-email') {
+      authError.value = 'Invalid email format.'
+      errorTarget.value = 'email'
+    } else if (code === 'auth/too-many-requests') {
+      authError.value = 'Too many attempts. Please try again later.'
+      errorTarget.value = 'general'
+    } else {
+      authError.value = 'Login failed. Please try again.'
+      errorTarget.value = 'general'
+    }
   }
 }
 
 function goSignup() {
-  router.push('/sign') 
+  router.push('/sign')
 }
 
-/* ===== NEW: Google Login function (ADDED ONLY) ===== */
 const googleProvider = new GoogleAuthProvider()
 
 async function googleLogin() {
+  clearError()
+
   try {
     const result = await signInWithPopup(auth, googleProvider)
     const user = result.user
@@ -112,13 +174,24 @@ async function googleLogin() {
 
     router.push('/dashboard')
   } catch (err) {
-    alert(err.message)
+    const code = err?.code || ''
+    if (code === 'auth/popup-closed-by-user') {
+      authError.value = 'Google sign-in popup closed. Try again.'
+    } else if (code === 'auth/popup-blocked') {
+      authError.value = 'Popup blocked by browser. Allow popups and try again.'
+    } else {
+      authError.value = 'Google sign-in failed. Please try again.'
+    }
+    errorTarget.value = 'general'
   }
+}
+
+function goForgot() {
+  router.push('/fogetpassword')
 }
 </script>
 
 <style scoped>
-
 .login-page {
   min-height: 100vh;
   display: grid;
@@ -127,24 +200,20 @@ async function googleLogin() {
   background: #d3e5ea;
 }
 
-
 .login-card {
   width: 500px;
   max-width: 94vw;
 
   box-shadow:
-    0 12px 30px rgba(37, 9, 219, 0.12),        /* depth */
-    0 6px 18px rgba(37, 99, 235, 0.25);     /* visible blue glow */
+    0 12px 30px rgba(37, 9, 219, 0.12),
+    0 6px 18px rgba(37, 99, 235, 0.25);
 
-  
   border-top: 1px solid rgba(37, 99, 235, 0.15);
 }
-
 
 .login-card * {
   box-sizing: border-box;
 }
-
 
 /* spacing */
 .field {
@@ -155,10 +224,8 @@ async function googleLogin() {
   margin-top: 12px;
 }
 
-
-
 .title-lg {
-  font-size: 1.6rem;   
+  font-size: 1.6rem;
 }
 
 .subtitle-lg {
@@ -171,15 +238,13 @@ async function googleLogin() {
 
 .input-lg {
   font-size: 1rem;
-  padding: 10px 14px;   
+  padding: 10px 14px;
 }
-
 
 .btn-lg {
   font-size: 1rem;
   padding: 11px 16px;
 }
-
 
 .demo-text {
   font-size: 0.9rem;
@@ -188,10 +253,10 @@ async function googleLogin() {
 
 .demo {
   margin-top: 18px;
-  text-align: center;          /* text center */
+  text-align: center;
   display: flex;
   flex-direction: column;
-  align-items: center;         /* center inside card */
+  align-items: center;
 }
 
 .demo p,
@@ -200,10 +265,10 @@ async function googleLogin() {
   width: 100%;
 }
 
-/* ===== NEW: Google login button styles (ADDED ONLY) ===== */
+/* ===== Google login button styles ===== */
 .google-btn {
   width: 100%;
-  margin-top: 12px;     /* space under Create Account button */
+  margin-top: 12px;
   padding: 12px 16px;
   border-radius: 10px;
   border: 1px solid #e9ecef;
@@ -242,5 +307,23 @@ async function googleLogin() {
 
 .g-text {
   font-size: 1rem;
+}
+
+/* ✅ NEW: inline error UI */
+.input-error {
+  border: 1px solid #dc3545 !important;
+  background: #fff5f5;
+}
+
+.error-text {
+  margin: 8px 0 0;
+  color: #dc3545;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.center-error {
+  text-align: center;
+  margin-top: 12px;
 }
 </style>
