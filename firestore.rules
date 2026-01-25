@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /alerts/{alertId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      // allow updates but controls who can change fields
+      allow update: if request.auth != null
+        && (
+          // allow status changes (ack/resolve) by authenticated users
+          request.resource.data.status is string
+          // add further checks as needed, e.g. roles
+        );
+    }
+    match /{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}
