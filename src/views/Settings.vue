@@ -25,8 +25,9 @@
                 <span class="label-text">{{ item.label }}</span>
                 <span class="val-display blue-text">{{ thresholds[item.key] }}{{ item.unit }}</span>
               </div>
+              <!-- coerce to number with .number so stored values are numeric -->
               <input type="range" :min="item.min" :max="item.max" :step="item.step" 
-                     v-model="thresholds[item.key]" class="custom-thick-slider" />
+                     v-model.number="thresholds[item.key]" class="custom-thick-slider" />
             </div>
           </div>
         </section>
@@ -114,18 +115,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, watch, onBeforeUnmount } from 'vue';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const activeTab = ref('Thresholds');
 
 /* --- Reactive State Arrays & Objects --- */
 // Config for the sliders to keep the template clean and prevent index crashes
 const thresholdConfig = [
-  { label: 'Temperature Limit', key: 'temp', unit: '°C', min: 40, max: 150, step: 1 },
+  { label: 'Temperature Limit', key: 'temp', unit: '°C', min: 10, max: 150, step: 1 },
   { label: 'Pressure Limit', key: 'pressure', unit: ' PSI', min: 0, max: 5000, step: 10 },
   { label: 'Vibration Level', key: 'vibration', unit: ' mm/s', min: 0, max: 20, step: 0.1 },
   { label: 'Low Efficiency Warning', key: 'efficiency', unit: '%', min: 10, max: 90, step: 1 }
-];
+
+
+
 
 
 const connectivity = ref({ endpoint: 'https://api.factorywatch.com/v1', polling: '1m' });
@@ -137,7 +142,55 @@ const systemFeatures = ref([
   { id: 2, name: 'Cloud Sync', desc: 'Sync local data with server', enabled: true }
 ]);
 
-const save = () => alert('Configuration Saved Successfully');
+let saveTimer: ReturnType<typeof setTimeout> | null = null
+const AUTO_SAVE_DELAY = 800
+
+// debounce auto-save whenever thresholds change via sliders
+watch(thresholds, () => {
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = setTimeout(async () => {
+    try {
+      await setDoc(doc(db, 'config', 'thresholds'), thresholds.value, { merge: true })
+      // optional: small console log to help debug
+      console.debug('Auto-saved thresholds', thresholds.value)
+    } catch (err) {
+      console.error('auto-save thresholds error', err)
+    }
+  }, AUTO_SAVE_DELAY)
+}, { deep: true })
+
+onBeforeUnmount(() => {
+  if (saveTimer) clearTimeout(saveTimer)
+})
+
+const save = async () => {
+  try {
+    // persist thresholds to Firestore under config/thresholds
+    await setDoc(doc(db, 'config', 'thresholds'), thresholds.value, { merge: true })
+    alert('Configuration Saved Successfully')
+  } catch (err) {
+    console.error('save error', err)
+    alert('Failed to save configuration')
+  }
+}
+
+onMounted(async () => {
+  try {
+    const snap = await getDoc(doc(db, 'config', 'thresholds'))
+    if (snap.exists()) {
+      const data = snap.data()
+      // update only known keys to avoid clobbering other config, coerce to number
+      for (const k in thresholds.value) {
+        if (data[k] !== undefined) {
+          const v = data[k]
+          thresholds.value[k] = (typeof v === 'number') ? v : (isNaN(Number(v)) ? thresholds.value[k] : Number(v))
+        }
+      }
+    }
+  } catch (err) {
+    console.error('load thresholds error', err)
+  }
+})
 </script>
 
 <style scoped>
