@@ -11,6 +11,8 @@
 <script setup lang="ts">
 import Sidebar from '../components/Sidebar.vue'
 import TopNavbar from '../components/TopNavbar.vue'
+
+// Components are already available in template via auto-import with setup syntax
 </script>
 
 <style scoped>
