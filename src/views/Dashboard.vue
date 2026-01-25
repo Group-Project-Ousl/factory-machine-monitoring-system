@@ -1,11 +1,8 @@
 <script setup lang="ts"> 
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import * as AddMachineModule from './addmachine.vue';
-const AddMachine = (AddMachineModule as any).default || (AddMachineModule as any).AddMachine || (AddMachineModule as any);
-
-
+import AddMachine from './addmachine.vue';
 import { collection, onSnapshot, query, orderBy, updateDoc, doc } from 'firebase/firestore'
-import { db } from '../firebase.js'
+import { db } from '../firebase'
 
 
 const lastUpdatedTime = ref(new Date().toLocaleTimeString());

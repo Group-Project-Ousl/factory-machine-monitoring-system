@@ -2,15 +2,17 @@
   <div class="login-page">
     <div class="login-card machine-card">
 
+      <!-- Title -->
       <div class="page-title title-lg" style="justify-content:center; margin-bottom: 16px;">
         <span class="icon"><i class="mdi mdi-lock-reset"></i></span>
         <span>Forgot Password</span>
       </div>
 
       <p class="label-text subtitle-lg" style="text-align:center; margin-bottom: 22px;">
-        Enter your email to receive an OTP
+        Enter your email and we will send a reset link.
       </p>
 
+      <!-- ✅ INPUT AREA: Email -->
       <div class="field">
         <label class="label-text label-lg">Email</label>
         <input
@@ -21,14 +23,17 @@
         />
       </div>
 
+      <!-- ✅ BUTTON: Send Reset Link -->
       <button
         class="btn-primary btn-lg"
         style="width:100%; margin-top: 18px;"
-        @click="sendOtp"
+        @click="sendResetLink"
+        :disabled="loading"
       >
-        Change Password
+        {{ loading ? 'Sending...' : 'Send Verification Link' }}
       </button>
 
+      <!-- ✅ BUTTON: Back to Login -->
       <button
         class="btn-secondary btn-lg"
         style="width:100%; margin-top: 12px;"
@@ -37,11 +42,10 @@
         Back to Login
       </button>
 
-      <div class="demo demo-center">
-        <p class="label-text label-lg" style="margin: 18px 0 8px;">Note:</p>
-        <div class="label-text demo-text">
-          OTP feature backend/Firebase integration will be added later.
-        </div>
+      <!-- ✅ MESSAGE AREA (center) -->
+      <div v-if="message" class="demo demo-center">
+        <p class="label-text label-lg" style="margin: 18px 0 8px;">Info:</p>
+        <div class="label-text demo-text">{{ message }}</div>
       </div>
 
     </div>
@@ -51,19 +55,43 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { auth } from '../firebase'
+import { sendPasswordResetEmail } from 'firebase/auth'
 
 const router = useRouter()
+
+// ✅ input data
 const email = ref('')
 
-function sendOtp() {
+// ✅ ui states
+const loading = ref(false)
+const message = ref('')
+
+async function sendResetLink() {
   const e = email.value.trim()
+
+  // 1) validation
   if (!e) {
     alert('Email එක enter කරන්න')
     return
   }
 
-  // UI demo only (later connect backend / firebase)
-  alert(`OTP sent (demo) to: ${e}`)
+  loading.value = true
+  message.value = ''
+
+  try {
+    // 2) send reset mail
+    await sendPasswordResetEmail(auth, e)
+
+    // 3) success message (security-friendly)
+    message.value = 'If this email is registered, a reset link has been sent. Check Inbox/Spam.'
+  } catch (err) {
+    console.error(err)
+    // 4) error message (still safe)
+    message.value = 'If this email is registered, a reset link has been sent. Check Inbox/Spam.'
+  } finally {
+    loading.value = false
+  }
 }
 
 function goLogin() {
@@ -72,7 +100,7 @@ function goLogin() {
 </script>
 
 <style scoped>
-/*Same background and card style as login/register */
+/* same theme as your login/register pages */
 .login-page {
   min-height: 100vh;
   display: grid;
@@ -100,7 +128,6 @@ function goLogin() {
   margin-top: 14px;
 }
 
-/* typography scale (same as your login) */
 .title-lg { font-size: 1.6rem; }
 .subtitle-lg { font-size: 1rem; }
 .label-lg { font-size: 0.95rem; }
@@ -109,9 +136,5 @@ function goLogin() {
 
 .demo { margin-top: 12px; }
 .demo-text { font-size: 0.9rem; line-height: 1.7; }
-
-/* center the bottom text inside card */
-.demo-center {
-  text-align: center;
-}
+.demo-center { text-align: center; }
 </style>

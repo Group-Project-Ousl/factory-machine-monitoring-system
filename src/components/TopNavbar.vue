@@ -76,6 +76,10 @@ const goSettings = () => {
 }
 </script>
 
+<script lang="ts">
+export default { name: 'TopNavbar' }
+</script>
+
 <style scoped>
 .top-navbar {
   height: 64px;
