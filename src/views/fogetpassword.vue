@@ -12,7 +12,7 @@
         Enter your email and we will send a reset link.
       </p>
 
-      <!-- ✅ INPUT AREA: Email -->
+      <!-- INPUT AREA: Email -->
       <div class="field">
         <label class="label-text label-lg">Email</label>
         <input
@@ -23,7 +23,7 @@
         />
       </div>
 
-      <!-- ✅ BUTTON: Send Reset Link -->
+      <!--BUTTON: Send Reset Link -->
       <button
         class="btn-primary btn-lg"
         style="width:100%; margin-top: 18px;"
@@ -33,7 +33,7 @@
         {{ loading ? 'Sending...' : 'Send Verification Link' }}
       </button>
 
-      <!-- ✅ BUTTON: Back to Login -->
+      <!--  BUTTON: Back to Login -->
       <button
         class="btn-secondary btn-lg"
         style="width:100%; margin-top: 12px;"
@@ -42,7 +42,7 @@
         Back to Login
       </button>
 
-      <!-- ✅ MESSAGE AREA (center) -->
+      <!--  MESSAGE AREA (center) -->
       <div v-if="message" class="demo demo-center">
         <p class="label-text label-lg" style="margin: 18px 0 8px;">Info:</p>
         <div class="label-text demo-text">{{ message }}</div>
@@ -60,10 +60,10 @@ import { sendPasswordResetEmail } from 'firebase/auth'
 
 const router = useRouter()
 
-// ✅ input data
+//  input data
 const email = ref('')
 
-// ✅ ui states
+//  ui states
 const loading = ref(false)
 const message = ref('')
 

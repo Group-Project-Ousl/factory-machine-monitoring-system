@@ -21,7 +21,7 @@
           placeholder="Enter your email"
         />
 
-        <!-- ✅ email error (under email) -->
+        <!-- email error (under email) -->
         <p v-if="authError && errorTarget === 'email'" class="error-text">
           {{ authError }}
         </p>
@@ -37,13 +37,13 @@
           placeholder="Enter your password"
         />
 
-        <!-- ✅ password error (under password) -->
+        <!--  password error (under password) -->
         <p v-if="authError && errorTarget === 'password'" class="error-text">
           {{ authError }}
         </p>
       </div>
 
-      <!-- ✅ general error (like google popup blocked etc.) -->
+      <!-- general error (like google popup blocked etc.) -->
       <p v-if="authError && errorTarget === 'general'" class="error-text center-error">
         {{ authError }}
       </p>
@@ -91,7 +91,7 @@ const router = useRouter()
 const email = ref('')
 const password = ref('')
 
-/* ✅ NEW: inline error state */
+/*  inline error state */
 const authError = ref('')
 const errorTarget = ref('') // 'email' | 'password' | 'general'
 
@@ -130,7 +130,7 @@ async function login() {
 
     router.push('/dashboard')
   } catch (err) {
-    // ✅ show message under password (no popup)
+    //show message under password (no popup)
     const code = err?.code || ''
     if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
       authError.value = 'Wrong password. Please check your password.'
@@ -309,7 +309,7 @@ function goForgot() {
   font-size: 1rem;
 }
 
-/* ✅ NEW: inline error UI */
+/* inline error UI */
 .input-error {
   border: 1px solid #dc3545 !important;
   background: #fff5f5;
