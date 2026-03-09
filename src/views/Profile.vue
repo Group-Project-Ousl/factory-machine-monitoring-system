@@ -1,5 +1,9 @@
 <template>
   <div class="profile-wrapper">
+    <div v-if="loading" style="text-align: center; padding: 50px;">
+      <p>Loading profile...</p>
+    </div>
+    <div v-else>
     <header class="profile-header">
       <div class="header-info">
         <h2 class="view-title">User Profile</h2>
@@ -35,9 +39,9 @@
             <label>Email Address</label>
             <input type="email" v-model="user.email" class="inline-input" />
           </div>
-          <div class="contact-item">
-            <i class="mdi mdi-phone-outline"></i>
-            <span>{{ user.phone }}</span>
+          <div class="field email-edit-field">
+            <label>Phone Number</label>
+            <input type="tel" v-model="user.phone" class="inline-input" placeholder="Enter phone number" />
           </div>
         </div>
       </section>
@@ -47,19 +51,19 @@
         <div class="details-grid">
           <div class="detail-item">
             <label>Department</label>
-            <p>{{ user.department }}</p>
+            <input type="text" v-model="user.department" class="inline-input" placeholder="Enter department" />
           </div>
           <div class="detail-item">
             <label>Workstation</label>
-            <p>{{ user.workstation }}</p>
+            <input type="text" v-model="user.workstation" class="inline-input" placeholder="Enter workstation" />
           </div>
           <div class="detail-item">
             <label>Current Shift</label>
-            <p>{{ user.shift }}</p>
+            <input type="text" v-model="user.shift" class="inline-input" placeholder="e.g., Morning (06:00 - 14:00)" />
           </div>
           <div class="detail-item">
             <label>Supervisor</label>
-            <p>{{ user.supervisor }}</p>
+            <input type="text" v-model="user.supervisor" class="inline-input" placeholder="Enter supervisor name" />
           </div>
         </div>
       </section>
@@ -81,11 +85,22 @@
 
       <section class="profile-card full-width">
         <h3 class="card-title">Security Update</h3>
+        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Change your password securely</p>
         <div class="security-form-grid">
+          <div class="field">
+            <label>Current Password</label>
+            <div class="password-wrapper">
+              <input :type="showOldPass ? 'text' : 'password'" v-model="oldPassword" placeholder="Enter current password" />
+              <button class="eye-btn" @click="showOldPass = !showOldPass">
+                <i class="mdi" :class="showOldPass ? 'mdi-eye-off' : 'mdi-eye'"></i>
+              </button>
+            </div>
+          </div>
+
           <div class="field">
             <label>New Password</label>
             <div class="password-wrapper">
-              <input :type="showPass ? 'text' : 'password'" v-model="password" @input="checkStrength" placeholder="••••••••" />
+              <input :type="showPass ? 'text' : 'password'" v-model="newPassword" @input="checkStrength" placeholder="Enter new password" />
               <button class="eye-btn" @click="showPass = !showPass">
                 <i class="mdi" :class="showPass ? 'mdi-eye-off' : 'mdi-eye'"></i>
               </button>
@@ -96,39 +111,115 @@
             <span class="strength-label" :style="{ color: strengthColor }">Strength: {{ strengthLabel }}</span>
           </div>
 
+          <div class="field">
+            <label>Confirm New Password</label>
+            <div class="password-wrapper">
+              <input :type="showConfirmPass ? 'text' : 'password'" v-model="confirmPassword" placeholder="Confirm new password" />
+              <button class="eye-btn" @click="showConfirmPass = !showConfirmPass">
+                <i class="mdi" :class="showConfirmPass ? 'mdi-eye-off' : 'mdi-eye'"></i>
+              </button>
+            </div>
+            <p v-if="confirmPassword && newPassword !== confirmPassword" style="color: #ef4444; font-size: 0.85rem; margin-top: 6px;">
+              <i class="mdi mdi-alert-circle"></i> Passwords do not match
+            </p>
+          </div>
+
           <div class="password-requirements">
+            <p style="font-weight: 600; margin-bottom: 12px; color: #0f172a;">Password Requirements:</p>
             <div :class="['requirement', { met: hasMinLength }]">
               <i class="mdi" :class="hasMinLength ? 'mdi-check-circle' : 'mdi-circle-outline'"></i> 8+ Characters
             </div>
             <div :class="['requirement', { met: hasSpecial }]">
               <i class="mdi" :class="hasSpecial ? 'mdi-check-circle' : 'mdi-circle-outline'"></i> Special Character
             </div>
+            <button class="btn-primary" @click="updatePassword" :disabled="!canUpdatePassword" style="margin-top: 20px; width: 100%;">
+              <i class="mdi mdi-lock-reset"></i> Update Password
+            </button>
           </div>
         </div>
       </section>
+    </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { auth, db } from '../firebase';
+import { onAuthStateChanged, updatePassword as firebaseUpdatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 /* --- State Management --- */
 const user = ref({
-  name: 'Daniel Fischer',
-  role: 'Senior Operator',
-  employeeId: 'FW-0892',
-  email: 'd.fischer@factorywatch.com',
-  phone: '+49 152 9876543',
-  department: 'Thermal Processing',
-  workstation: 'Line 04',
-  shift: 'Morning (06:00 - 14:00)',
-  supervisor: 'Marcus Vane',
+  name: '',
+  role: 'Operator',
+  employeeId: '',
+  email: '',
+  phone: '',
+  department: '',
+  workstation: '',
+  shift: '',
+  supervisor: '',
   avatarUrl: null as string | null
 });
 
-const password = ref('');
+const loading = ref(true);
+const currentUserId = ref('');
+
+/* --- Fetch User Data from Firebase --- */
+onMounted(() => {
+  onAuthStateChanged(auth, async (firebaseUser) => {
+    if (firebaseUser) {
+      currentUserId.value = firebaseUser.uid;
+      try {
+        // Fetch user data from Firestore
+        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          user.value = {
+            name: userData.name || firebaseUser.displayName || '',
+            role: userData.role || 'Operator',
+            employeeId: userData.employeeId || firebaseUser.uid.substring(0, 8).toUpperCase(),
+            email: userData.email || firebaseUser.email || '',
+            phone: userData.phone || '',
+            department: userData.department || '',
+            workstation: userData.workstation || '',
+            shift: userData.shift || '',
+            supervisor: userData.supervisor || '',
+            avatarUrl: userData.avatarUrl || null
+          };
+        } else {
+          // If no Firestore doc, use auth data
+          user.value = {
+            name: firebaseUser.displayName || '',
+            role: 'Operator',
+            employeeId: firebaseUser.uid.substring(0, 8).toUpperCase(),
+            email: firebaseUser.email || '',
+            phone: '',
+            department: '',
+            workstation: '',
+            shift: '',
+            supervisor: '',
+            avatarUrl: null
+          };
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        loading.value = false;
+      }
+    } else {
+      loading.value = false;
+    }
+  });
+});
+
+const oldPassword = ref('');
+const newPassword = ref('');
+const confirmPassword = ref('');
+const showOldPass = ref(false);
 const showPass = ref(false);
+const showConfirmPass = ref(false);
 const strengthScore = ref(0);
 
 const metrics = ref([
@@ -150,20 +241,90 @@ const handleFileUpload = (event: Event) => {
 };
 
 /* --- Password Strength Logic --- */
-const hasMinLength = computed(() => password.value.length >= 8);
-const hasSpecial = computed(() => /[!@#$%^&*()]/.test(password.value));
+const hasMinLength = computed(() => newPassword.value.length >= 8);
+const hasSpecial = computed(() => /[!@#$%^&*()]/.test(newPassword.value));
 const strengthLabel = computed(() => strengthScore.value > 66 ? 'Strong' : strengthScore.value > 33 ? 'Medium' : 'Weak');
 const strengthColor = computed(() => strengthScore.value > 66 ? '#10b981' : strengthScore.value > 33 ? '#f59e0b' : '#ef4444');
+const canUpdatePassword = computed(() => {
+  return oldPassword.value.length > 0 && 
+         newPassword.value.length >= 8 && 
+         hasSpecial.value && 
+         newPassword.value === confirmPassword.value;
+});
 
 const checkStrength = () => {
   let score = 0;
-  if (password.value.length > 0) score += 20;
+  if (newPassword.value.length > 0) score += 20;
   if (hasMinLength.value) score += 40;
   if (hasSpecial.value) score += 40;
   strengthScore.value = score;
 };
 
-const saveProfile = () => alert('Profile security and contact info updated.');
+const updatePassword = async () => {
+  if (!canUpdatePassword.value) {
+    alert('Please fill all fields correctly');
+    return;
+  }
+
+  const user = auth.currentUser;
+  if (!user || !user.email) {
+    alert('No user logged in');
+    return;
+  }
+
+  try {
+    // Re-authenticate user with current password
+    const credential = EmailAuthProvider.credential(user.email, oldPassword.value);
+    await reauthenticateWithCredential(user, credential);
+    
+    // Update to new password
+    await firebaseUpdatePassword(user, newPassword.value);
+    
+    // Clear fields
+    oldPassword.value = '';
+    newPassword.value = '';
+    confirmPassword.value = '';
+    strengthScore.value = 0;
+    
+    alert('Password updated successfully!');
+  } catch (error: any) {
+    console.error('Error updating password:', error);
+    if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      alert('Current password is incorrect. Please try again.');
+    } else if (error.code === 'auth/weak-password') {
+      alert('New password is too weak. Please choose a stronger password.');
+    } else {
+      alert('Failed to update password. Please try again.');
+    }
+  }
+};
+
+const saveProfile = async () => {
+  if (!currentUserId.value) {
+    alert('No user logged in');
+    return;
+  }
+
+  try {
+    // Use setDoc with merge to create or update user data in Firestore
+    await setDoc(doc(db, 'users', currentUserId.value), {
+      name: user.value.name,
+      email: user.value.email,
+      phone: user.value.phone,
+      department: user.value.department,
+      workstation: user.value.workstation,
+      shift: user.value.shift,
+      supervisor: user.value.supervisor,
+      role: user.value.role,
+      avatarUrl: user.value.avatarUrl,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    alert('Profile updated successfully!');
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    alert('Failed to update profile. Please try again.');
+  }
+};
 </script>
 
 <style scoped>
@@ -195,22 +356,31 @@ const saveProfile = () => alert('Profile security and contact info updated.');
 
 /* Details & Stats */
 .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.detail-item label { display: block; font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
-.detail-item p { font-weight: 600; color: #334155; margin: 4px 0 0 0; }
-
-.metric-box { margin-bottom: 20px; }
+  .detail-item label { display: block; font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; }
+  .detail-item p { font-weight: 600; color: #334155; margin: 4px 0 0 0; }
+  .detail-item input { width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #edf2f7; background: #f8fafc; font-weight: 600; color: #334155; }
 .progress-track { height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
 .progress-bar { height: 100%; background: #2563eb; }
 
 /* Security Update */
-.security-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+.security-form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+@media (max-width: 1200px) { 
+  .security-form-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 768px) { 
+  .security-form-grid { grid-template-columns: 1fr; }
+}
 .password-wrapper { position: relative; display: flex; align-items: center; }
 .password-wrapper input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #edf2f7; background: #f8fafc; }
 .eye-btn { position: absolute; right: 12px; background: none; border: none; color: #94a3b8; cursor: pointer; }
 .strength-meter { height: 6px; background: #f1f5f9; border-radius: 3px; margin-top: 10px; overflow: hidden; }
 .strength-bar { height: 100%; transition: 0.4s; }
-.requirement { font-size: 0.8rem; color: #94a3b8; display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.strength-label { font-size: 0.85rem; margin-top: 6px; display: inline-block; font-weight: 600; }
+.requirement { font-size: 0.875rem; color: #94a3b8; display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .requirement.met { color: #10b981; }
+.password-requirements { padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #edf2f7; }
 
 .btn-primary { background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+.btn-primary:disabled { background: #94a3b8; cursor: not-allowed; opacity: 0.6; }
+.btn-primary:not(:disabled):hover { background: #1e293b; }
 </style>

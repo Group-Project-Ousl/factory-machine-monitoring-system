@@ -70,8 +70,9 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 // Add Firebase imports
-import { auth } from '../firebase'
+import { auth, db } from '../firebase'
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
 
 const router = useRouter()
 
@@ -107,6 +108,21 @@ async function createAccount () {
     const userCredential = await createUserWithEmailAndPassword(auth, email.value.trim(), password.value)
     // Set display name
     await updateProfile(userCredential.user, { displayName: fullName.value.trim() })
+    
+    // Store additional user data in Firestore
+    await setDoc(doc(db, 'users', userCredential.user.uid), {
+      name: fullName.value.trim(),
+      email: email.value.trim(),
+      username: username.value.trim(),
+      phone: mobile.value.trim(),
+      createdAt: new Date().toISOString(),
+      role: 'Operator',
+      department: '',
+      workstation: '',
+      shift: '',
+      supervisor: ''
+    })
+    
     alert('Account created successfully! Now login.')
     router.push('/login')
   } catch (e) {

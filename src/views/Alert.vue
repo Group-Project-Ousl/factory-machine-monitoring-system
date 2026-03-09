@@ -396,6 +396,23 @@ onUnmounted(() => {
 
 <style scoped>
 /* Supplemental Layout Styles using your variables */
+.dashboard-container {
+  padding: 32px;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.machine-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.main-content {
+  padding: 28px;
+}
+
 .stats-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -404,11 +421,11 @@ onUnmounted(() => {
 }
 
 .stat-box {
-  padding: 24px;
+  padding: 28px;
 }
 
 .stat-value {
-  font-size: 2rem;
+  font-size: 2.75rem;
   font-weight: 700;
   margin-top: 8px;
 }
@@ -435,8 +452,8 @@ onUnmounted(() => {
 .tab-btn {
   border: none;
   background: transparent;
-  padding: 6px 16px;
-  font-size: 14px;
+  padding: 8px 18px;
+  font-size: 1rem;
   font-weight: 600;
   color: #6c757d;
   cursor: pointer;
@@ -459,7 +476,7 @@ onUnmounted(() => {
 .alert-item {
   display: flex;
   gap: 16px;
-  padding: 20px;
+  padding: 24px;
   border-radius: 12px;
   border: 1px solid transparent;
 }
@@ -468,15 +485,15 @@ onUnmounted(() => {
 .warning-bg { background-color: #fff8e1; border-color: #ffeeba; }
 
 .icon-container {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   background: #ffffff;
   border: 1px solid #e9ecef;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 24px;
 }
 
 .critical-bg .icon-container { color: #dc3545; }
@@ -490,7 +507,7 @@ onUnmounted(() => {
 }
 
 .metadata {
-  font-size: 12px;
+  font-size: 1rem;
   font-weight: 600;
   color: #adb5bd;
   margin-top: 8px;
@@ -505,7 +522,55 @@ onUnmounted(() => {
 }
 
 .btn-sm {
-  padding: 6px 16px;
-  font-size: 13px;
+  padding: 8px 18px;
+  font-size: 1rem;
+}
+
+/* Additional text styling */
+.label-text {
+  font-size: 1.125rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1d23;
+  margin: 0;
+}
+
+.machine-id {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1d23;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badge-error {
+  background: #dc3545;
+  color: white;
+}
+
+.badge-idle {
+  background: #ffc107;
+  color: #1a1d23;
+}
+
+.alert-body {
+  flex: 1;
+}
+
+.alert-body p {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin: 8px 0;
 }
 </style>
