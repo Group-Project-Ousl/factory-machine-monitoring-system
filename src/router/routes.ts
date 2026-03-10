@@ -8,7 +8,7 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: '',
-        redirect: '/login'
+        redirect: '/welcome'
       },
       {
         path: 'dashboard',
