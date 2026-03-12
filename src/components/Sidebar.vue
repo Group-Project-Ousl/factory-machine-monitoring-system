@@ -54,6 +54,7 @@ const menuItems = [
   { label: "Analytics", icon: "mdi mdi-chart-line", routeName: "Analytics" },
   { label: "Alerts", icon: "mdi mdi-bell-alert", routeName: "Alert" },
   { label: "Help Center", icon: "mdi mdi-help-circle", routeName: "Help" }
+  
 ];
 
 // Navigate to route
