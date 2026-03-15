@@ -67,6 +67,7 @@ function updateCountsFromMachines() {
     { label: 'Running', value: counts.Running, color: '#10b981' },
     { label: 'Idle', value: counts.Idle, color: '#f59e0b' },
     { label: 'Errors', value: counts.Error, color: '#ef4444' }
+    
   ]
 }
 
