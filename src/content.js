@@ -1,24 +1,19 @@
 export const projects = [
   {
-    title: "Creative Portfolio",
+    title: "HTML Tutorial",
     description:
-      "A bold personal site with motion, responsive sections, and project storytelling.",
-    stack: ["React", "Vite", "CSS"],
+      "A comprehensive guide to modern HTML5 development and best practices.",
+    stack: ["HTML5", "SEO", "Accessibility"],
     link: "#",
+    category: "BEGINNER",
   },
   {
-    title: "Task Dashboard",
+    title: "CSS Tutorial",
     description:
-      "A clean productivity dashboard with filters, quick actions, and analytics cards.",
-    stack: ["React", "APIs", "UX"],
+      "Master CSS3 layouts, animations, and responsive design techniques.",
+    stack: ["CSS3", "Layout", "Animation"],
     link: "#",
-  },
-  {
-    title: "Brand Landing Page",
-    description:
-      "A launch page designed to convert visitors with clear messaging and visual hierarchy.",
-    stack: ["UI Design", "Motion", "Accessibility"],
-    link: "#",
+    category: "PRO",
   },
 ];
 
@@ -37,5 +32,10 @@ export const experienceIcons = [
   { label: "Node.js", short: "N" },
   { label: "HTML5", short: "5" },
   { label: "CSS3", short: "3" },
+  { label: "Vue.js", short: "V" },
   { label: "React", short: "◌" },
+  { label: "Firebase", short: "F" },
+  { label: "SQL", short: "SQL" },
+  { label: "Figma", short: "Fg" },
+  { label: "Database", short: "DB" },
 ];
