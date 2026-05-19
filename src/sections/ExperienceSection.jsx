@@ -2,7 +2,7 @@ import React from "react";
 
 function ExperienceSection() {
   return (
-    <section className="content-section experience-section">
+    <section id="experience" className="content-section experience-section">
       <div className="section-title">
         <p className="section-kicker section-kicker-blue">EXPERIENCE</p>
       </div>
