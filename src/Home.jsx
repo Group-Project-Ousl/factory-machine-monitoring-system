@@ -81,7 +81,18 @@ function Home() {
       <section className="hero-section" id="home">
         <div className="avatar-wrap">
           <div className="avatar-ring">
-            <img src={profileImg} alt="Profile" className="avatar-face" />
+            <a
+              className="avatar-link"
+              href="https://github.com/bawantha1697"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="View GitHub profile"
+            >
+              <img src={profileImg} alt="Profile" className="avatar-face" />
+              <span className="avatar-overlay">
+                <img src="https://cdn.simpleicons.org/github/ffffff" alt="GitHub" />
+              </span>
+            </a>
           </div>
         </div>
 
