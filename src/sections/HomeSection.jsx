@@ -39,7 +39,7 @@ function HomeSection({ experienceIcons }) {
             <a className="button button-primary" href="#contact">
               Get In Touch
             </a>
-            <a className="button button-secondary" href="#">
+            <a className="button button-secondary" href={`${import.meta.env.BASE_URL}resume.pdf`} download>
               Download CV
             </a>
           </div>
